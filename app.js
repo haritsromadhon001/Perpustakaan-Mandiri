@@ -16,7 +16,7 @@
 const DEFAULT_SUPABASE_URL = "";  // Contoh: "https://xyzproject.supabase.co"
 const DEFAULT_SUPABASE_KEY = "";  // Contoh: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-// Global State
+// Global State & Central In-Memory Cache
 let currentView = 'landing';
 let selectedCategory = 'all';
 let currentSearchTerm = '';
@@ -28,6 +28,11 @@ let serverInfo = null;
 let isServerOnline = false;
 let isSupabaseActive = false;
 let supabaseClient = null;
+
+// Central In-Memory Cache to ensure Mobile and Desktop render identical state
+let cachedBooks = [];
+let cachedSchedules = [];
+let isDataLoading = false;
 
 // ==============================================================================
 // 1. DATA ACCESS LAYER (SUPABASE CLOUD + LOCAL SERVER + INDEXEDDB FALLBACK)
@@ -42,8 +47,65 @@ class DataRepository {
     this.mode = 'local'; // 'supabase', 'server', 'indexeddb'
   }
 
+  // Auto-sync credentials dari URL jika membuka via QR Code / URL parameter
+  checkUrlSyncParams() {
+    try {
+      const urlObj = new URL(window.location.href);
+      let sbUrl = urlObj.searchParams.get('sb_url');
+      let sbKey = urlObj.searchParams.get('sb_key');
+
+      if (!sbUrl && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        sbUrl = hashParams.get('sb_url');
+        sbKey = hashParams.get('sb_key');
+      }
+
+      if (sbUrl && sbKey) {
+        localStorage.setItem('PERPUS_SUPABASE_URL', sbUrl);
+        localStorage.setItem('PERPUS_SUPABASE_KEY', sbKey);
+        console.log('✓ Konfigurasi Supabase berhasil disinkronkan otomatis dari tautan/QR code!');
+
+        // Bersihkan parameter dari URL agar address bar bersih
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    } catch (e) {
+      console.warn('Gagal membaca parameter sync URL:', e);
+    }
+  }
+
+  // Buka IndexedDB secara aman dengan memastikan object stores selalu dibuat
+  async openIndexedDB() {
+    if (this.idb) return this.idb;
+    return new Promise((resolve) => {
+      if (!window.indexedDB) return resolve(null);
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('books')) {
+          db.createObjectStore('books', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('schedules')) {
+          db.createObjectStore('schedules', { keyPath: 'id' });
+        }
+      };
+      request.onsuccess = (e) => {
+        this.idb = e.target.result;
+        resolve(this.idb);
+      };
+      request.onerror = (e) => {
+        console.warn('Gagal membuka IndexedDB:', e.target.error);
+        resolve(null);
+      };
+    });
+  }
+
   async init() {
-    // 1. Selalu bersihkan buku dummy lawas di memori HP jika ada
+    // 0. Auto-sync Supabase dari parameter URL jika membuka lewat scan QR dari laptop
+    this.checkUrlSyncParams();
+
+    // 1. Inisialisasi IndexedDB secara aman terlebih dahulu
+    await this.openIndexedDB();
     await this.purgeLegacyLocalData();
 
     // 2. Cek apakah ada konfigurasi Supabase (dari variabel kode atau dari memori input)
@@ -63,6 +125,9 @@ class DataRepository {
           supabaseClient = this.supabase;
           this.updateCloudStatusUI(true, 'Supabase Cloud Aktif (Sinkron di Vercel)');
           console.log('⚡ Terhubung ke Supabase Cloud Database!');
+          
+          // Sinkronkan buku lokal jika ada yang belum terunggah ke Cloud
+          this.syncLocalBooksToCloud().catch(console.warn);
           return;
         } else {
           console.warn('Supabase terdeteksi tapi query error:', error.message);
@@ -84,30 +149,13 @@ class DataRepository {
         return;
       }
     } catch {
-      // Server lokal tidak aktif (misal dibuka langsung di Vercel tanpa Supabase)
       isServerOnline = false;
     }
 
     // 4. Fallback terakhir: Browser IndexedDB lokal
     this.mode = 'indexeddb';
     this.updateCloudStatusUI(false, 'Mode Lokal (Belum Terhubung Cloud)');
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      request.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains('books')) {
-          db.createObjectStore('books', { keyPath: 'id' });
-        }
-        if (!db.objectStoreNames.contains('schedules')) {
-          db.createObjectStore('schedules', { keyPath: 'id' });
-        }
-      };
-      request.onsuccess = (e) => {
-        this.idb = e.target.result;
-        resolve();
-      };
-      request.onerror = (e) => reject(e.target.error);
-    });
+    await this.openIndexedDB();
   }
 
   updateCloudStatusUI(isOnline, statusText) {
@@ -115,6 +163,12 @@ class DataRepository {
     const text = document.getElementById('cloudStatusText');
     const banner = document.getElementById('cloud-modal-status-banner');
     const bannerText = document.getElementById('cloud-modal-status-text');
+
+    // Mobile indicators
+    const mDot = document.getElementById('mobileCloudStatusDot');
+    const mText = document.getElementById('mobileCloudStatusText');
+    const mBadge = document.getElementById('mobileCloudBadge');
+    const mMenuDot = document.getElementById('mobileMenuCloudDot');
 
     if (dot && text) {
       if (isOnline) {
@@ -124,6 +178,24 @@ class DataRepository {
         dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse';
         text.textContent = 'Cloud Sync';
       }
+    }
+
+    if (mDot && mText && mBadge) {
+      if (isOnline) {
+        mDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500';
+        mText.textContent = 'Cloud Aktif';
+        mBadge.className = 'inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold';
+      } else {
+        mDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse';
+        mText.textContent = 'Lokal (HP)';
+        mBadge.className = 'inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold';
+      }
+    }
+
+    if (mMenuDot) {
+      mMenuDot.className = isOnline
+        ? 'absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500'
+        : 'absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500 animate-pulse';
     }
 
     if (banner && bannerText) {
@@ -138,13 +210,11 @@ class DataRepository {
   }
 
   async purgeLegacyLocalData() {
-    return new Promise((resolve) => {
-      try {
-        if (!window.indexedDB) return resolve();
-        const req = indexedDB.open(DB_NAME, DB_VERSION);
-        req.onsuccess = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains('books')) return resolve();
+    try {
+      const db = await this.openIndexedDB();
+      if (!db || !db.objectStoreNames.contains('books') || !db.objectStoreNames.contains('schedules')) return;
+      return new Promise((resolve) => {
+        try {
           const tx = db.transaction(['books', 'schedules'], 'readwrite');
           const bookStore = tx.objectStore('books');
           const schedStore = tx.objectStore('schedules');
@@ -157,12 +227,109 @@ class DataRepository {
 
           tx.oncomplete = () => resolve();
           tx.onerror = () => resolve();
-        };
-        req.onerror = () => resolve();
+        } catch {
+          resolve();
+        }
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  // --- IndexedDB Direct Access Helpers ---
+  async getLocalIndexedDbBooks() {
+    return new Promise((resolve) => {
+      try {
+        if (!this.idb) {
+          this.openIndexedDB().then((db) => {
+            if (!db || !db.objectStoreNames.contains('books')) return resolve([]);
+            try {
+              const tx = db.transaction('books', 'readonly');
+              const req = tx.objectStore('books').getAll();
+              req.onsuccess = () => resolve(req.result || []);
+              req.onerror = () => resolve([]);
+            } catch {
+              resolve([]);
+            }
+          });
+          return;
+        }
+        if (!this.idb.objectStoreNames.contains('books')) return resolve([]);
+        const tx = this.idb.transaction('books', 'readonly');
+        const req = tx.objectStore('books').getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => resolve([]);
       } catch {
-        resolve();
+        resolve([]);
       }
     });
+  }
+
+  async saveLocalIndexedDbBook(book) {
+    return new Promise((resolve) => {
+      try {
+        if (!this.idb) {
+          this.openIndexedDB().then((db) => {
+            if (!db || !db.objectStoreNames.contains('books')) return resolve(book);
+            try {
+              const tx = db.transaction('books', 'readwrite');
+              const req = tx.objectStore('books').put(book);
+              req.onsuccess = () => resolve(book);
+              req.onerror = () => resolve(book);
+            } catch {
+              resolve(book);
+            }
+          });
+          return;
+        }
+        if (!this.idb.objectStoreNames.contains('books')) return resolve(book);
+        const tx = this.idb.transaction('books', 'readwrite');
+        const req = tx.objectStore('books').put(book);
+        req.onsuccess = () => resolve(book);
+        req.onerror = () => resolve(book);
+      } catch {
+        resolve(book);
+      }
+    });
+  }
+
+  // Otomatis sinkronkan buku lokal di IndexedDB ke Supabase Cloud
+  async syncLocalBooksToCloud() {
+    if (!this.supabase || this.mode !== 'supabase') return;
+    try {
+      const localBooks = await this.getLocalIndexedDbBooks();
+      if (!localBooks || localBooks.length === 0) return;
+
+      const { data: cloudBooks, error } = await this.supabase.from('books').select('id');
+      if (error) return;
+
+      const cloudIds = new Set((cloudBooks || []).map((b) => b.id));
+      const unSynced = localBooks.filter((b) => !cloudIds.has(b.id));
+
+      if (unSynced.length > 0) {
+        console.log(`Mengunggah ${unSynced.length} buku lokal ke Supabase Cloud...`);
+        for (const book of unSynced) {
+          const payload = {
+            id: book.id,
+            title: book.title || 'Tanpa Judul',
+            author: book.author || 'Anonim',
+            category: book.category || 'Lainnya',
+            total_pages: Number(book.totalPages) || 100,
+            current_page: Number(book.currentPage) || 0,
+            status: book.status || 'Belum Dibaca',
+            notes: book.notes || '',
+            cover_gradient: book.coverGradient,
+            pdf_url: book.pdfUrl || null,
+            pdf_file_name: book.pdfFileName || null,
+            created_at: book.createdAt || new Date().toISOString()
+          };
+          await this.supabase.from('books').upsert([payload]);
+        }
+        console.log('✓ Sinkronisasi buku lokal ke Cloud berhasil!');
+      }
+    } catch (err) {
+      console.warn('Sync local books warning:', err);
+    }
   }
 
   // --- Books CRUD ---
@@ -178,11 +345,11 @@ class DataRepository {
         if (!error && data) {
           return data.map((b) => ({
             id: b.id,
-            title: b.title,
-            author: b.author,
-            category: b.category,
-            totalPages: b.total_pages || 100,
-            currentPage: b.current_page || 0,
+            title: b.title || 'Tanpa Judul',
+            author: b.author || 'Anonim',
+            category: b.category || 'Lainnya',
+            totalPages: Number(b.total_pages) || 100,
+            currentPage: Number(b.current_page) || 0,
             status: b.status || 'Belum Dibaca',
             notes: b.notes || '',
             coverGradient: b.cover_gradient,
@@ -190,6 +357,8 @@ class DataRepository {
             pdfFileName: b.pdf_file_name,
             createdAt: b.created_at
           }));
+        } else if (error) {
+          console.warn('Supabase getAllBooks error:', error.message);
         }
       } catch (err) {
         console.error('Supabase fetch books error:', err);
@@ -207,14 +376,7 @@ class DataRepository {
     }
 
     // Mode IndexedDB Lokal
-    return new Promise((resolve) => {
-      if (!this.idb) return resolve([]);
-      const tx = this.idb.transaction('books', 'readonly');
-      const store = tx.objectStore('books');
-      const req = store.getAll();
-      req.onsuccess = () => resolve(req.result || []);
-      req.onerror = () => resolve([]);
-    });
+    return await this.getLocalIndexedDbBooks();
   }
 
   async getBook(id) {
@@ -227,16 +389,16 @@ class DataRepository {
     if (this.mode === 'supabase' && this.supabase) {
       const payload = {
         id: book.id,
-        title: book.title,
-        author: book.author,
-        category: book.category,
-        total_pages: book.totalPages,
-        current_page: book.currentPage,
-        status: book.status,
-        notes: book.notes,
+        title: book.title || 'Tanpa Judul',
+        author: book.author || 'Anonim',
+        category: book.category || 'Lainnya',
+        total_pages: Number(book.totalPages) || 100,
+        current_page: Number(book.currentPage) || 0,
+        status: book.status || 'Belum Dibaca',
+        notes: book.notes || '',
         cover_gradient: book.coverGradient,
-        pdf_url: book.pdfUrl,
-        pdf_file_name: book.pdfFileName,
+        pdf_url: book.pdfUrl || null,
+        pdf_file_name: book.pdfFileName || null,
         created_at: book.createdAt || new Date().toISOString()
       };
 
@@ -245,6 +407,8 @@ class DataRepository {
         .upsert([payload]);
 
       if (error) throw error;
+      // Backup ke IndexedDB lokal
+      this.saveLocalIndexedDbBook(book).catch(() => {});
       return book;
     }
 
@@ -259,14 +423,7 @@ class DataRepository {
     }
 
     // Mode IndexedDB Lokal
-    return new Promise((resolve, reject) => {
-      if (!this.idb) return resolve(book);
-      const tx = this.idb.transaction('books', 'readwrite');
-      const store = tx.objectStore('books');
-      const req = store.put(book);
-      req.onsuccess = () => resolve(book);
-      req.onerror = () => reject(req.error);
-    });
+    return await this.saveLocalIndexedDbBook(book);
   }
 
   async deleteBook(id) {
@@ -481,8 +638,27 @@ class DataRepository {
 const dataRepo = new DataRepository();
 
 // ==============================================================================
-// 2. INITIALIZATION HELPER (STARTS COMPLETELY EMPTY)
+// 2. CENTRAL DATA SYNCHRONIZATION CONTROLLER
 // ==============================================================================
+async function loadAndSyncData() {
+  isDataLoading = true;
+  try {
+    const [books, schedules] = await Promise.all([
+      dataRepo.getAllBooks(),
+      dataRepo.getAllSchedules()
+    ]);
+    cachedBooks = books || [];
+    cachedSchedules = schedules || [];
+    updateStatistics(cachedBooks, cachedSchedules);
+    return { books: cachedBooks, schedules: cachedSchedules };
+  } catch (err) {
+    console.error('Error synchronizing data:', err);
+    return { books: cachedBooks, schedules: cachedSchedules };
+  } finally {
+    isDataLoading = false;
+  }
+}
+
 async function seedDefaultDataIfEmpty() {
   // Website dibiarkan dalam kondisi bersih & kosong agar pengguna dapat menambahkan koleksi sendiri.
 }
@@ -500,6 +676,7 @@ function navigateTo(viewName) {
   const targetView = document.getElementById(`view-${viewName}`);
   if (targetView) targetView.classList.remove('hidden');
 
+  // Update Desktop Navigation tab buttons
   const navIds = ['landing', 'dashboard', 'schedule'];
   navIds.forEach((id) => {
     const btn = document.getElementById(`nav-btn-${id}`);
@@ -510,6 +687,16 @@ function navigateTo(viewName) {
       } else {
         btn.classList.remove('active', 'bg-white', 'text-amber-900', 'shadow-xs');
         btn.classList.add('text-slate-600');
+      }
+    }
+
+    // Update Mobile Bottom Dock buttons
+    const mBtn = document.getElementById(`mobile-nav-btn-${id}`);
+    if (mBtn) {
+      if (id === viewName) {
+        mBtn.className = 'flex flex-col items-center gap-1 font-bold text-amber-900 transition-colors';
+      } else {
+        mBtn.className = 'flex flex-col items-center gap-1 text-slate-500 hover:text-amber-900 transition-colors';
       }
     }
   });
@@ -528,24 +715,27 @@ function navigateTo(viewName) {
 // ==============================================================================
 // 4. DASHBOARD & RAK BUKU RENDERING
 // ==============================================================================
-async function renderDashboardView() {
-  const books = await dataRepo.getAllBooks();
-  updateStatistics(books);
+async function renderDashboardView(forceRefresh = false) {
+  if (forceRefresh || (cachedBooks.length === 0 && !isDataLoading)) {
+    await loadAndSyncData();
+  }
+  updateStatistics(cachedBooks, cachedSchedules);
 
   const container = document.getElementById('bookshelf-grid');
   const emptyState = document.getElementById('empty-bookshelf');
+  if (!container || !emptyState) return;
 
-  let filtered = books.filter((book) => {
-    const matchCat =
-      selectedCategory === 'all' ||
-      book.category.toLowerCase() === selectedCategory.toLowerCase();
+  const filtered = cachedBooks.filter((book) => {
+    const bookCat = (book.category || '').toLowerCase();
+    const selCat = (selectedCategory || 'all').toLowerCase();
+    const matchCat = selCat === 'all' || bookCat === selCat;
 
-    const searchLow = currentSearchTerm.toLowerCase();
+    const searchLow = (currentSearchTerm || '').toLowerCase().trim();
     const matchSearch =
-      !currentSearchTerm ||
-      book.title.toLowerCase().includes(searchLow) ||
-      book.author.toLowerCase().includes(searchLow) ||
-      (book.notes && book.notes.toLowerCase().includes(searchLow));
+      !searchLow ||
+      (book.title || '').toLowerCase().includes(searchLow) ||
+      (book.author || '').toLowerCase().includes(searchLow) ||
+      (book.notes || '').toLowerCase().includes(searchLow);
 
     const matchStatus =
       currentStatusFilter === 'all' || book.status === currentStatusFilter;
@@ -682,51 +872,68 @@ function createBookCardHTML(book) {
 // ==============================================================================
 // 5. STATISTICS & COUNTERS UPDATE
 // ==============================================================================
-async function updateStatistics(books) {
-  if (!books) books = await dataRepo.getAllBooks();
-  const schedules = await dataRepo.getAllSchedules();
+function updateStatistics(books = cachedBooks, schedules = cachedSchedules) {
+  const safeBooks = Array.isArray(books) ? books : [];
+  const safeSchedules = Array.isArray(schedules) ? schedules : [];
 
-  const total = books.length;
-  const keagamaanCount = books.filter((b) => b.category === 'Keagamaan').length;
-  const networkCount = books.filter((b) => b.category === 'Network Engineer').length;
+  const total = safeBooks.length;
+  const keagamaanCount = safeBooks.filter((b) => (b.category || '').toLowerCase() === 'keagamaan').length;
+  const networkCount = safeBooks.filter((b) => (b.category || '').toLowerCase() === 'network engineer').length;
   const othersCount = total - keagamaanCount - networkCount;
 
-  const pdfCount = books.filter((b) => !!(b.pdfUrl || b.pdfBlob)).length;
-  const completedCount = books.filter((b) => b.status === 'Selesai').length;
+  const pdfCount = safeBooks.filter((b) => !!(b.pdfUrl || b.pdfBlob)).length;
+  const completedCount = safeBooks.filter((b) => b.status === 'Selesai').length;
   const completedPct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
 
-  const activeSchedules = schedules.filter((s) => s.status !== 'Selesai').length;
+  const activeSchedules = safeSchedules.filter((s) => s.status !== 'Selesai').length;
 
-  document.getElementById('stat-total-books').textContent = total;
-  document.getElementById('stat-keagamaan-books').textContent = keagamaanCount;
-  document.getElementById('stat-network-books').textContent = networkCount;
-  document.getElementById('stat-pdf-books').textContent = pdfCount;
-  document.getElementById('stat-completed-percent').textContent = `${completedPct}% tuntas`;
+  const setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
 
-  document.getElementById('count-cat-all').textContent = total;
-  document.getElementById('count-cat-keagamaan').textContent = keagamaanCount;
-  document.getElementById('count-cat-network').textContent = networkCount;
-  document.getElementById('count-cat-lainnya').textContent = Math.max(0, othersCount);
+  setText('stat-total-books', total);
+  setText('stat-keagamaan-books', keagamaanCount);
+  setText('stat-network-books', networkCount);
+  setText('stat-pdf-books', pdfCount);
+  setText('stat-completed-percent', `${completedPct}% tuntas`);
 
-  document.getElementById('landing-stat-total').textContent = total;
-  document.getElementById('landing-stat-keagamaan').textContent = keagamaanCount;
-  document.getElementById('landing-stat-network').textContent = networkCount;
-  document.getElementById('landing-stat-schedules').textContent = activeSchedules;
+  setText('count-cat-all', total);
+  setText('count-cat-keagamaan', keagamaanCount);
+  setText('count-cat-network', networkCount);
+  setText('count-cat-lainnya', Math.max(0, othersCount));
 
-  document.getElementById('badge-active-schedules').textContent = activeSchedules;
+  setText('landing-stat-total', total);
+  setText('landing-stat-keagamaan', keagamaanCount);
+  setText('landing-stat-network', networkCount);
+  setText('landing-stat-schedules', activeSchedules);
+
+  setText('badge-active-schedules', activeSchedules);
+
+  const mBadge = document.getElementById('mobile-badge-schedules');
+  if (mBadge) {
+    mBadge.textContent = activeSchedules;
+    if (activeSchedules > 0) {
+      mBadge.classList.remove('hidden');
+    } else {
+      mBadge.classList.add('hidden');
+    }
+  }
 }
 
 // ==============================================================================
 // 6. LANDING PAGE RENDERING
 // ==============================================================================
-async function renderLandingView() {
-  const books = await dataRepo.getAllBooks();
-  updateStatistics(books);
+async function renderLandingView(forceRefresh = false) {
+  if (forceRefresh || (cachedBooks.length === 0 && !isDataLoading)) {
+    await loadAndSyncData();
+  }
+  updateStatistics(cachedBooks, cachedSchedules);
 
   const previewContainer = document.getElementById('landing-books-preview');
   if (!previewContainer) return;
 
-  const featured = books.slice(0, 4);
+  const featured = cachedBooks.slice(0, 4);
 
   if (featured.length === 0) {
     previewContainer.innerHTML = `
@@ -747,8 +954,8 @@ async function renderLandingView() {
 
   previewContainer.innerHTML = featured
     .map((book) => {
-      const isKeagamaan = book.category === 'Keagamaan';
-      const isNetwork = book.category === 'Network Engineer';
+      const isKeagamaan = (book.category || '') === 'Keagamaan';
+      const isNetwork = (book.category || '') === 'Network Engineer';
       const badgeClass = isKeagamaan
         ? 'bg-emerald-100 text-emerald-800'
         : isNetwork
@@ -767,17 +974,17 @@ async function renderLandingView() {
       <div onclick="navigateTo('dashboard')" class="bg-white rounded-2xl p-4 border border-amber-200/60 shadow-xs hover:shadow-md cursor-pointer transition-all group flex flex-col justify-between">
         <div class="book-cover-mockup bg-gradient-to-br ${gradient} text-white p-3 h-36 rounded-xl flex flex-col justify-between mb-3">
           <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-xs text-white inline-block w-fit">
-            ${escapeHTML(book.category)}
+            ${escapeHTML(book.category || 'Buku')}
           </span>
           <div>
-            <h5 class="font-serif font-bold text-xs line-clamp-2 text-white">${escapeHTML(book.title)}</h5>
-            <p class="text-[10px] text-white/80 line-clamp-1 italic">${escapeHTML(book.author)}</p>
+            <h5 class="font-serif font-bold text-xs line-clamp-2 text-white">${escapeHTML(book.title || 'Tanpa Judul')}</h5>
+            <p class="text-[10px] text-white/80 line-clamp-1 italic">${escapeHTML(book.author || 'Anonim')}</p>
           </div>
         </div>
 
         <div>
-          <span class="text-[10px] font-semibold px-2 py-0.5 rounded ${badgeClass}">${escapeHTML(book.category)}</span>
-          <h4 class="font-bold text-xs text-slate-900 mt-1 line-clamp-1">${escapeHTML(book.title)}</h4>
+          <span class="text-[10px] font-semibold px-2 py-0.5 rounded ${badgeClass}">${escapeHTML(book.category || 'Lainnya')}</span>
+          <h4 class="font-bold text-xs text-slate-900 mt-1 line-clamp-1">${escapeHTML(book.title || 'Tanpa Judul')}</h4>
           <p class="text-[11px] text-slate-500">${book.totalPages || 0} Halaman</p>
         </div>
       </div>
@@ -1030,25 +1237,23 @@ async function handleSaveSchedule(e) {
   await dataRepo.saveSchedule(scheduleObj);
   closeScheduleModal();
   showToast('Jadwal baca berhasil disimpan!', 'success');
+  await loadAndSyncData();
   renderScheduleView();
-  updateStatistics();
 }
 
 async function moveScheduleStatus(id, newStatus) {
-  const schedules = await dataRepo.getAllSchedules();
-  const item = schedules.find((s) => s.id === id);
+  const item = cachedSchedules.find((s) => s.id === id) || (await dataRepo.getAllSchedules()).find((s) => s.id === id);
   if (item) {
     item.status = newStatus;
     item.completed = newStatus === 'Selesai';
     await dataRepo.saveSchedule(item);
+    await loadAndSyncData();
     renderScheduleView();
-    updateStatistics();
   }
 }
 
 async function toggleScheduleComplete(id) {
-  const schedules = await dataRepo.getAllSchedules();
-  const item = schedules.find((s) => s.id === id);
+  const item = cachedSchedules.find((s) => s.id === id) || (await dataRepo.getAllSchedules()).find((s) => s.id === id);
   if (item) {
     if (item.status === 'Selesai') {
       item.status = 'Sedang Berjalan';
@@ -1058,8 +1263,8 @@ async function toggleScheduleComplete(id) {
       item.completed = true;
     }
     await dataRepo.saveSchedule(item);
+    await loadAndSyncData();
     renderScheduleView();
-    updateStatistics();
   }
 }
 
@@ -1067,8 +1272,8 @@ async function confirmDeleteSchedule(id) {
   if (confirm('Apakah Anda yakin ingin menghapus jadwal ini?')) {
     await dataRepo.deleteSchedule(id);
     showToast('Jadwal berhasil dihapus', 'info');
+    await loadAndSyncData();
     renderScheduleView();
-    updateStatistics();
   }
 }
 
@@ -1216,14 +1421,14 @@ async function handleSaveBook(e) {
   try {
     await dataRepo.saveBook(bookData);
     closeBookModal();
-    showToast(`Buku "${title}" berhasil disimpan di Cloud! Tersinkron di semua HP & PC.`, 'success');
+    showToast(`Buku "${title}" berhasil disimpan! Tersinkron di semua perangkat.`, 'success');
 
+    await loadAndSyncData();
     if (currentView === 'dashboard') {
       renderDashboardView();
     } else if (currentView === 'landing') {
       renderLandingView();
     }
-    updateStatistics();
   } catch (saveErr) {
     console.error(saveErr);
     showToast(`Gagal menyimpan: ${saveErr.message}`, 'error');
@@ -1236,9 +1441,9 @@ async function confirmDeleteBook(id) {
 
   if (confirm(`Apakah Anda yakin ingin menghapus "${title}" dari rak perpustakaan?`)) {
     await dataRepo.deleteBook(id);
-    showToast('Buku telah dihapus dari cloud.', 'info');
+    showToast('Buku telah dihapus dari perpustakaan.', 'info');
+    await loadAndSyncData();
     renderDashboardView();
-    updateStatistics();
   }
 }
 
@@ -1351,7 +1556,11 @@ async function handleSaveCloudConfig(e) {
     closeCloudConfigModal();
     showToast('Berhasil terhubung ke Supabase Cloud! Data sekarang otomatis tersinkron di HP & PC.', 'success');
 
+    // Sinkronkan buku lokal di IndexedDB jika ada yang belum terunggah ke Cloud
+    await dataRepo.syncLocalBooksToCloud();
+
     // Reload tampilan dengan data cloud
+    await loadAndSyncData();
     renderDashboardView();
     renderLandingView();
     renderScheduleView();
@@ -1369,10 +1578,12 @@ function handleDisconnectCloud() {
     supabaseClient = null;
     dataRepo.updateCloudStatusUI(false, 'Mode Lokal (Belum Terhubung Cloud)');
     closeCloudConfigModal();
-    showToast('Koneksi Cloud diputuskan.', 'info');
-    renderDashboardView();
-    renderLandingView();
-    renderScheduleView();
+    showToast('Koneksi Cloud diputuskan. Beralih ke penyimpanan lokal.', 'info');
+    loadAndSyncData().then(() => {
+      renderDashboardView();
+      renderLandingView();
+      renderScheduleView();
+    });
   }
 }
 
@@ -1442,21 +1653,49 @@ for all using (bucket_id = 'books-pdf') with check (bucket_id = 'books-pdf');
 // ==============================================================================
 // 12. MOBILE SYNC MODAL & QR CODE
 // ==============================================================================
-async function openMobileSyncModal() {
-  let targetUrl = window.location.href;
-  let isCloud = isSupabaseActive;
+function toggleMobileActionMenu() {
+  const menu = document.getElementById('mobileActionDropdown');
+  if (menu) menu.classList.toggle('hidden');
+}
 
-  document.getElementById('mobile-url-input').value = targetUrl;
+document.addEventListener('click', (e) => {
+  const btn = document.getElementById('mobileActionMenuBtn');
+  const menu = document.getElementById('mobileActionDropdown');
+  if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+    menu.classList.add('hidden');
+  }
+});
+
+async function openMobileSyncModal() {
+  const supaUrl = DEFAULT_SUPABASE_URL || localStorage.getItem('PERPUS_SUPABASE_URL');
+  const supaKey = DEFAULT_SUPABASE_KEY || localStorage.getItem('PERPUS_SUPABASE_KEY');
+
+  let targetUrl = window.location.href;
+  const isCloud = isSupabaseActive && supaUrl && supaKey;
+
+  if (isCloud) {
+    try {
+      const urlObj = new URL(window.location.origin + window.location.pathname);
+      urlObj.searchParams.set('sb_url', supaUrl);
+      urlObj.searchParams.set('sb_key', supaKey);
+      targetUrl = urlObj.href;
+    } catch {
+      targetUrl = window.location.href;
+    }
+  } else if (serverInfo && serverInfo.publicUrl) {
+    targetUrl = serverInfo.publicUrl;
+  }
+
+  const inputEl = document.getElementById('mobile-url-input');
+  if (inputEl) inputEl.value = targetUrl;
 
   const badgeText = document.getElementById('mobile-sync-badge-text');
   const badgePill = document.getElementById('mobile-sync-mode-pill');
   if (badgeText && badgePill) {
     if (isCloud) {
-      badgeText.textContent = 'Terhubung via Supabase Cloud (Otomatis Sinkron di Vercel)';
+      badgeText.textContent = 'Terhubung via Supabase Cloud (Otomatis Sinkron di HP & PC)';
       badgePill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 mb-3';
     } else if (serverInfo && serverInfo.publicUrl) {
-      targetUrl = serverInfo.publicUrl;
-      document.getElementById('mobile-url-input').value = targetUrl;
       badgeText.textContent = 'Link Internet Publik Cloudflare Aktif';
       badgePill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 mb-3';
     } else {
@@ -1466,7 +1705,9 @@ async function openMobileSyncModal() {
   }
 
   const qrImg = document.getElementById('qr-code-img');
-  qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(targetUrl)}&margin=10`;
+  if (qrImg) {
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(targetUrl)}&margin=10`;
+  }
 
   document.getElementById('modal-mobile-sync').classList.remove('hidden');
 }
@@ -1606,12 +1847,13 @@ async function importLibraryData(event) {
     }
 
     showToast('Data perpustakaan berhasil dipulihkan!', 'success');
+    await loadAndSyncData();
     renderDashboardView();
     renderLandingView();
     renderScheduleView();
   } catch (err) {
     console.error('Import error:', err);
-    showToast('Gagal memulihkan file. Format tidak valid.', 'error');
+    showToast('Gagal memuat file. Format tidak valid.', 'error');
   } finally {
     event.target.value = '';
   }
@@ -1622,6 +1864,7 @@ async function confirmResetData() {
   if (confirm('Apakah Anda yakin ingin mengosongkan seluruh data buku dan jadwal baca? Database akan kembali kosong bersih.')) {
     await dataRepo.resetData();
     showToast('Seluruh data perpustakaan telah dikosongkan.', 'info');
+    await loadAndSyncData();
     renderDashboardView();
     renderLandingView();
     renderScheduleView();
@@ -1701,8 +1944,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     await dataRepo.init();
     await seedDefaultDataIfEmpty();
+    await loadAndSyncData();
     renderLandingView();
-    updateStatistics();
     lucide.createIcons();
   } catch (err) {
     console.error('Initialization error:', err);

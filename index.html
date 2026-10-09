@@ -70,24 +70,24 @@
 <body class="bg-[#fcfaf7] text-slate-800 antialiased font-sans min-h-screen flex flex-col selection:bg-amber-200 selection:text-amber-900">
 
   <!-- ================= TOP NAVIGATION BAR ================= -->
-  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-amber-100 shadow-sm transition-all duration-200">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-amber-100/90 shadow-xs transition-all duration-200">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-2">
         
-        <!-- Logo & Branding -->
-        <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('landing')">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-600 to-amber-800 flex items-center justify-center text-white shadow-md shadow-amber-700/20">
+        <!-- Logo & Branding (Responsive text & icons) -->
+        <div class="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0 flex-1 sm:flex-initial" onclick="navigateTo('landing')">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-600 to-amber-800 flex items-center justify-center text-white shadow-md shadow-amber-700/20 shrink-0">
             <i data-lucide="book-open-check" class="w-5 h-5"></i>
           </div>
-          <div>
-            <h1 class="text-lg font-extrabold tracking-tight text-slate-900 font-serif leading-tight">Perpustakaan Mandiri</h1>
-            <p class="text-[11px] font-medium text-amber-800 tracking-wider uppercase">Personal Digital Bookshelf</p>
+          <div class="min-w-0 truncate">
+            <h1 class="text-sm sm:text-base md:text-lg font-extrabold tracking-tight text-slate-900 font-serif leading-tight truncate">Perpustakaan Mandiri</h1>
+            <p class="text-[9px] sm:text-[11px] font-medium text-amber-800 tracking-wider uppercase truncate">Personal Digital Bookshelf</p>
           </div>
         </div>
 
-        <!-- Navigation Links -->
+        <!-- Navigation Links (Desktop) -->
         <nav class="hidden md:flex items-center gap-1 bg-amber-50/70 p-1 rounded-xl border border-amber-200/50">
-          <button id="nav-btn-landing" onclick="navigateTo('landing')" class="nav-tab px-4 py-2 rounded-lg text-sm font-semibold text-amber-900 bg-white shadow-xs transition-all flex items-center gap-2">
+          <button id="nav-btn-landing" onclick="navigateTo('landing')" class="nav-tab active px-4 py-2 rounded-lg text-sm font-semibold text-amber-900 bg-white shadow-xs transition-all flex items-center gap-2">
             <i data-lucide="compass" class="w-4 h-4 text-amber-600"></i>
             Beranda
           </button>
@@ -103,67 +103,105 @@
         </nav>
 
         <!-- Right Quick Actions -->
-        <div class="flex items-center gap-2">
-          <!-- Status & Pengaturan Database Cloud Supabase -->
-          <button onclick="openCloudConfigModal()" id="cloudStatusBtn" class="px-2.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shadow-2xs" title="Pengaturan Database Cloud (Supabase)">
-            <span id="cloudStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-            <span id="cloudStatusText" class="hidden md:inline">Cloud Database</span>
-          </button>
-
-          <!-- Tombol Akses HP -->
-          <button onclick="openMobileSyncModal()" class="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 active:scale-95 shadow-2xs" title="Buka di HP">
-            <i data-lucide="smartphone" class="w-4 h-4 text-amber-700"></i>
-            <span class="hidden sm:inline">Buka di HP</span>
-          </button>
-
-          <button onclick="openAddBookModal()" class="px-3.5 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs sm:text-sm font-medium shadow-md shadow-amber-800/20 hover:shadow-lg transition-all flex items-center gap-2 active:scale-95">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          
+          <!-- Tombol Tambah Buku PDF (Always Visible, Compact on Mobile) -->
+          <button onclick="openAddBookModal()" class="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs sm:text-sm font-semibold shadow-xs flex items-center gap-1.5 shrink-0 active:scale-95 transition-all" title="Tambah Koleksi PDF Baru">
+            <i data-lucide="plus" class="w-4 h-4"></i>
             <span class="hidden sm:inline">Tambah Buku PDF</span>
+            <span class="inline sm:hidden font-medium">Buku</span>
           </button>
 
-          <!-- Export/Import Data Menu Dropdown Button -->
-          <div class="relative">
-            <button onclick="toggleDataMenu()" id="dataMenuBtn" class="p-2 rounded-xl text-slate-600 hover:bg-amber-100/60 border border-transparent hover:border-amber-200 transition-all" title="Cadangan Data">
-              <i data-lucide="database" class="w-5 h-5 text-slate-600"></i>
+          <!-- Desktop Quick Actions (hidden on mobile < sm) -->
+          <div class="hidden sm:flex items-center gap-2">
+            <!-- Status & Pengaturan Database Cloud Supabase -->
+            <button onclick="openCloudConfigModal()" id="cloudStatusBtn" class="px-2.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shadow-2xs" title="Pengaturan Database Cloud (Supabase)">
+              <span id="cloudStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+              <span id="cloudStatusText" class="hidden md:inline">Cloud Database</span>
             </button>
-            <div id="dataMenuDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 text-xs">
-              <div class="px-3 py-2 border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Penyimpanan Lokal</div>
-              <button onclick="exportLibraryData()" class="w-full text-left px-4 py-2 text-slate-700 hover:bg-amber-50 flex items-center gap-2 font-medium">
+
+            <!-- Tombol Akses HP -->
+            <button onclick="openMobileSyncModal()" id="desktopMobileSyncBtn" class="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 active:scale-95 shadow-2xs" title="Buka di HP & QR Code">
+              <i data-lucide="smartphone" class="w-4 h-4 text-amber-700"></i>
+              <span class="hidden sm:inline">Buka di HP</span>
+            </button>
+
+            <!-- Export/Import Data Menu Dropdown Button -->
+            <div class="relative">
+              <button onclick="toggleDataMenu()" id="dataMenuBtn" class="p-2 rounded-xl text-slate-600 hover:bg-amber-100/60 border border-transparent hover:border-amber-200 transition-all" title="Cadangan Data">
+                <i data-lucide="database" class="w-5 h-5 text-slate-600"></i>
+              </button>
+              <div id="dataMenuDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 text-xs">
+                <div class="px-3 py-2 border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Penyimpanan Data</div>
+                <button onclick="exportLibraryData()" class="w-full text-left px-4 py-2 text-slate-700 hover:bg-amber-50 flex items-center gap-2 font-medium">
+                  <i data-lucide="download" class="w-4 h-4 text-amber-600"></i> Cadangkan Data (Backup)
+                </button>
+                <label class="w-full text-left px-4 py-2 text-slate-700 hover:bg-amber-50 flex items-center gap-2 font-medium cursor-pointer">
+                  <i data-lucide="upload" class="w-4 h-4 text-amber-600"></i> Pulihkan Data (Restore)
+                  <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importLibraryData(event)" />
+                </label>
+                <button onclick="confirmResetData()" class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium">
+                  <i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i> Kosongkan Semua Data
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mobile Actions Dropdown (Only visible on < sm screens) -->
+          <div class="relative sm:hidden">
+            <button onclick="toggleMobileActionMenu()" id="mobileActionMenuBtn" class="p-2 rounded-xl text-slate-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 transition-all flex items-center justify-center shrink-0 active:scale-95" title="Menu Opsi">
+              <i data-lucide="more-vertical" class="w-4 h-4 text-amber-900"></i>
+              <span id="mobileMenuCloudDot" class="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            </button>
+            <div id="mobileActionDropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 text-xs">
+              <div class="px-3 py-1.5 text-slate-400 font-semibold uppercase tracking-wider text-[10px] border-b border-slate-100">
+                Opsi & Sinkronisasi
+              </div>
+              
+              <!-- Supabase Cloud Status -->
+              <button onclick="openCloudConfigModal(); toggleMobileActionMenu();" class="w-full text-left px-3.5 py-2.5 hover:bg-amber-50 flex items-center justify-between text-slate-700">
+                <span class="flex items-center gap-2 font-medium">
+                  <i data-lucide="cloud" class="w-4 h-4 text-amber-700"></i> Database Cloud
+                </span>
+                <span id="mobileCloudBadge" class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">
+                  <span id="mobileCloudStatusDot" class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                  <span id="mobileCloudStatusText">Offline</span>
+                </span>
+              </button>
+
+              <!-- Buka di HP / QR Sync -->
+              <button onclick="openMobileSyncModal(); toggleMobileActionMenu();" class="w-full text-left px-3.5 py-2.5 hover:bg-amber-50 flex items-center gap-2 text-slate-700 font-medium">
+                <i data-lucide="smartphone" class="w-4 h-4 text-amber-700"></i> Buka di HP / QR Sync
+              </button>
+
+              <div class="my-1 border-t border-slate-100"></div>
+
+              <!-- Cadangkan Data -->
+              <button onclick="exportLibraryData(); toggleMobileActionMenu();" class="w-full text-left px-3.5 py-2 hover:bg-amber-50 flex items-center gap-2 text-slate-700 font-medium">
                 <i data-lucide="download" class="w-4 h-4 text-amber-600"></i> Cadangkan Data (Backup)
               </button>
-              <label class="w-full text-left px-4 py-2 text-slate-700 hover:bg-amber-50 flex items-center gap-2 font-medium cursor-pointer">
+
+              <!-- Pulihkan Data -->
+              <label class="w-full text-left px-3.5 py-2 hover:bg-amber-50 flex items-center gap-2 text-slate-700 font-medium cursor-pointer">
                 <i data-lucide="upload" class="w-4 h-4 text-amber-600"></i> Pulihkan Data (Restore)
-                <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importLibraryData(event)" />
+                <input type="file" id="importFileInputMobile" accept=".json" class="hidden" onchange="importLibraryData(event); toggleMobileActionMenu();" />
               </label>
-              <button onclick="confirmResetData()" class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium">
+
+              <!-- Kosongkan Data -->
+              <button onclick="confirmResetData(); toggleMobileActionMenu();" class="w-full text-left px-3.5 py-2 hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium">
                 <i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i> Kosongkan Semua Data
               </button>
             </div>
           </div>
+
         </div>
 
       </div>
     </div>
-
-    <!-- Mobile Nav Bar (Bottom Bar) -->
-    <div class="md:hidden flex items-center justify-around border-t border-amber-100 bg-white py-2 px-3 text-xs">
-      <button onclick="navigateTo('landing')" class="flex flex-col items-center gap-1 text-slate-600 hover:text-amber-800">
-        <i data-lucide="compass" class="w-4 h-4"></i>
-        <span>Beranda</span>
-      </button>
-      <button onclick="navigateTo('dashboard')" class="flex flex-col items-center gap-1 text-amber-800 font-bold">
-        <i data-lucide="layout-grid" class="w-4 h-4"></i>
-        <span>Rak Buku</span>
-      </button>
-      <button onclick="navigateTo('schedule')" class="flex flex-col items-center gap-1 text-slate-600 hover:text-amber-800">
-        <i data-lucide="calendar-check" class="w-4 h-4"></i>
-        <span>Jadwal</span>
-      </button>
-    </div>
   </header>
 
   <!-- ================= MAIN CONTENT CONTAINER ================= -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8">
 
     <!-- ============================================================== -->
     <!-- VIEW 1: LANDING PAGE -->
@@ -549,7 +587,7 @@
   </main>
 
   <!-- ================= FOOTER ================= -->
-  <footer class="mt-auto border-t border-amber-200/60 bg-white/60 py-6 text-center text-xs text-slate-500">
+  <footer class="mt-auto border-t border-amber-200/60 bg-white/60 py-6 text-center text-xs text-slate-500 mb-16 md:mb-0">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
       <div class="flex items-center gap-2">
         <i data-lucide="book-open" class="w-4 h-4 text-amber-700"></i>
@@ -952,11 +990,30 @@
 
 
   <!-- ============================================================== -->
+  <!-- MOBILE BOTTOM NAVIGATION DOCK (FIXED ON SCREEN < MD) -->
+  <!-- ============================================================== -->
+  <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-amber-100 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] py-2 px-6 flex items-center justify-around">
+    <button id="mobile-nav-btn-landing" onclick="navigateTo('landing')" class="flex flex-col items-center gap-1 font-bold text-amber-900 transition-colors">
+      <i data-lucide="compass" class="w-5 h-5"></i>
+      <span class="text-[11px]">Beranda</span>
+    </button>
+    <button id="mobile-nav-btn-dashboard" onclick="navigateTo('dashboard')" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-900 transition-colors">
+      <i data-lucide="layout-grid" class="w-5 h-5"></i>
+      <span class="text-[11px]">Rak Buku</span>
+    </button>
+    <button id="mobile-nav-btn-schedule" onclick="navigateTo('schedule')" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-900 transition-colors relative">
+      <i data-lucide="calendar-check" class="w-5 h-5"></i>
+      <span class="text-[11px]">Jadwal</span>
+      <span id="mobile-badge-schedules" class="hidden bg-amber-600 text-white text-[9px] px-1 rounded-full font-bold absolute -top-1 -right-2">0</span>
+    </button>
+  </nav>
+
+  <!-- ============================================================== -->
   <!-- TOAST NOTIFICATION CONTAINER -->
   <!-- ============================================================== -->
-  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  <div id="toast-container" class="fixed bottom-20 md:bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- JavaScript Modules with Cache Busting Version -->
-  <script src="app.js?v=2.5.0"></script>
+  <script src="app.js?v=2.6.0"></script>
 </body>
 </html>
