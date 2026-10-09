@@ -50,14 +50,19 @@
     }
   </script>
 
+  <!-- Cache Control Meta Tags to Prevent Stale Mobile Cache -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
   <!-- Google Fonts & Lucide Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Custom Styles -->
-  <link rel="stylesheet" href="style.css" />
+  <!-- Custom Styles with Cache Busting -->
+  <link rel="stylesheet" href="style.css?v=2.5.0" />
 </head>
 <body class="bg-[#fcfaf7] text-slate-800 antialiased font-sans min-h-screen flex flex-col selection:bg-amber-200 selection:text-amber-900">
 
@@ -804,6 +809,12 @@
         Semua buku PDF dan jadwal membaca Anda tersinkronisasi otomatis antara Laptop dan HP secara real-time!
       </p>
 
+      <!-- Public Internet Mode Badge -->
+      <div id="mobile-sync-mode-pill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 mb-3">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="mobile-sync-badge-text">Link Internet Publik Aktif (Bisa dari mana saja tanpa Wi-Fi)</span>
+      </div>
+
       <!-- QR Code Container -->
       <div class="bg-amber-50/60 p-4 rounded-2xl border border-amber-200/80 inline-block mb-4">
         <div class="w-48 h-48 bg-white rounded-xl shadow-xs p-2 flex items-center justify-center mx-auto overflow-hidden">
@@ -813,8 +824,8 @@
       </div>
 
       <!-- URL Input Box with Copy Button -->
-      <div class="space-y-1.5 mb-5 text-left">
-        <label class="block text-[11px] font-semibold text-slate-600">Atau ketik alamat ini di browser HP:</label>
+      <div class="space-y-1.5 mb-4 text-left">
+        <label class="block text-[11px] font-semibold text-slate-600">Atau buka link website ini di HP Anda:</label>
         <div class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
           <input type="text" id="mobile-url-input" readonly value="http://localhost:8000" class="flex-1 bg-transparent text-xs font-mono font-bold text-slate-800 px-2 outline-none select-all" />
           <button onclick="copyMobileUrl()" class="px-3 py-1.5 rounded-lg bg-white text-slate-700 hover:text-amber-800 hover:bg-amber-50 font-semibold text-xs border border-slate-200/80 transition-colors shadow-2xs flex items-center gap-1">
@@ -825,19 +836,26 @@
       </div>
 
       <!-- Quick Step Instructions -->
-      <div class="bg-slate-50 rounded-2xl p-3 text-left space-y-1.5 text-[11px] text-slate-600 border border-slate-200/60 mb-5">
+      <div class="bg-slate-50 rounded-2xl p-3 text-left space-y-1.5 text-[11px] text-slate-600 border border-slate-200/60 mb-4">
         <div class="flex items-start gap-2">
-          <span class="w-4 h-4 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</span>
-          <span>Pastikan <strong>Laptop dan HP</strong> terhubung ke jaringan <strong>Wi-Fi yang sama</strong>.</span>
+          <span class="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">✓</span>
+          <span><strong>Bisa dibuka dari mana saja</strong>: Memakai kuota data HP (4G/5G) atau jaringan internet apa pun.</span>
         </div>
         <div class="flex items-start gap-2">
-          <span class="w-4 h-4 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</span>
-          <span>Buka link di atas pada Google Chrome / Safari HP Anda.</span>
+          <span class="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">✓</span>
+          <span>Buku PDF baru yang ditambahkan di laptop <strong>langsung terlihat di HP</strong>.</span>
         </div>
-        <div class="flex items-start gap-2">
-          <span class="w-4 h-4 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</span>
-          <span>Koleksi buku PDF & jadwal baca akan langsung tampil di HP tanpa perlu unggah ulang!</span>
+      </div>
+
+      <!-- Tombol Bersihkan Cache HP -->
+      <div class="bg-amber-50/50 p-2.5 rounded-xl border border-amber-200/60 mb-4 flex items-center justify-between text-left">
+        <div>
+          <p class="text-[11px] font-bold text-slate-800">HP masih memuat buku lama?</p>
+          <p class="text-[10px] text-slate-500">Hapus memori cache tersimpan di HP dalam 1 klik</p>
         </div>
+        <button onclick="cleanMobileCacheAndReload()" class="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold text-[11px] shadow-xs transition-colors flex items-center gap-1 shrink-0">
+          <i data-lucide="trash-2" class="w-3 h-3"></i> Bersihkan HP
+        </button>
       </div>
 
       <button onclick="closeMobileSyncModal()" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-colors">
@@ -853,7 +871,7 @@
   <!-- ============================================================== -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- JavaScript Modules -->
-  <script src="app.js"></script>
+  <!-- JavaScript Modules with Cache Busting Version -->
+  <script src="app.js?v=2.5.0"></script>
 </body>
 </html>

@@ -8,6 +8,8 @@ import socket
 import urllib.parse
 import uuid
 import re
+import subprocess
+import threading
 
 PORT = 8000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -18,8 +20,11 @@ DB_FILE = os.path.join(DATA_DIR, "library.json")
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
+cloudflared_proc = None
+public_tunnel_url = None
+
 def get_local_ip():
-    """Detect local LAN IP for HP / mobile access."""
+    """Detect local LAN IP for Wi-Fi access."""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(("8.8.8.8", 80))
@@ -29,6 +34,35 @@ def get_local_ip():
     finally:
         s.close()
     return ip
+
+def start_cloudflared_tunnel():
+    """Starts Cloudflare Quick Tunnel to create a real public HTTPS URL (accessible on HP anywhere without Wi-Fi)."""
+    global cloudflared_proc, public_tunnel_url
+    cf_path = os.path.join(BASE_DIR, "cloudflared.exe")
+    if not os.path.exists(cf_path):
+        return
+
+    try:
+        cloudflared_proc = subprocess.Popen(
+            [cf_path, "tunnel", "--url", f"http://127.0.0.1:{PORT}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+        )
+
+        for line in cloudflared_proc.stdout:
+            match = re.search(r'(https://[a-zA-Z0-9\-]+\.trycloudflare\.com)', line)
+            if match:
+                public_tunnel_url = match.group(1)
+                print("-" * 65)
+                print(" 🌍 [INTERNET PUBLIK AKTIF] Buka di HP dari mana saja (4G/5G):")
+                print(f" 👉 {public_tunnel_url}")
+                print("-" * 65)
+                break
+    except Exception as e:
+        print(f"Catatan: Tunnel internet publik tidak aktif: {e}")
 
 def initialize_database():
     """Ensure database file exists in a clean, empty state ready for user input."""
@@ -53,11 +87,12 @@ class LibraryRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*args, directory=BASE_DIR, **kwargs)
 
     def end_headers(self):
-        # Allow cross-origin and mobile devices to access smoothly
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Filename")
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
         super().end_headers()
 
     def do_OPTIONS(self):
@@ -76,14 +111,18 @@ class LibraryRequestHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
-        # API: Info server (detect IP for HP)
+        # API: Info server (detect IP & Public URL for HP)
         if path == "/api/info":
             local_ip = get_local_ip()
+            best_url = public_tunnel_url or f"http://{local_ip}:{PORT}"
             return self.send_json({
                 "appName": "Perpustakaan Mandiri",
                 "serverIp": local_ip,
                 "port": PORT,
-                "url": f"http://{local_ip}:{PORT}"
+                "localUrl": f"http://localhost:{PORT}",
+                "networkUrl": f"http://{local_ip}:{PORT}",
+                "publicUrl": public_tunnel_url,
+                "url": best_url
             })
 
         # API: Get Books
@@ -96,13 +135,11 @@ class LibraryRequestHandler(http.server.SimpleHTTPRequestHandler):
             db = load_db()
             return self.send_json(db.get("schedules", []))
 
-        # Serving static files (index.html, style.css, uploads, etc.)
         super().do_GET()
 
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
-
         content_length = int(self.headers.get("Content-Length", 0))
 
         # API: Upload PDF file
@@ -110,7 +147,6 @@ class LibraryRequestHandler(http.server.SimpleHTTPRequestHandler):
             raw_filename = self.headers.get("X-Filename", "document.pdf")
             raw_filename = urllib.parse.unquote(raw_filename)
             
-            # Clean filename
             safe_basename = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', os.path.basename(raw_filename))
             if not safe_basename.lower().endswith('.pdf'):
                 safe_basename += '.pdf'
@@ -118,7 +154,6 @@ class LibraryRequestHandler(http.server.SimpleHTTPRequestHandler):
             unique_name = f"{uuid.uuid4().hex[:8]}_{safe_basename}"
             dest_path = os.path.join(UPLOADS_DIR, unique_name)
 
-            # Stream read in chunks to handle files of any size without RAM issues
             remaining = content_length
             with open(dest_path, "wb") as f:
                 while remaining > 0:
@@ -143,7 +178,6 @@ class LibraryRequestHandler(http.server.SimpleHTTPRequestHandler):
             db = load_db()
             books = db.get("books", [])
 
-            # Check if book already exists (update)
             existing_idx = next((i for i, b in enumerate(books) if b.get("id") == book_item.get("id")), -1)
             if existing_idx >= 0:
                 books[existing_idx] = book_item
@@ -175,7 +209,6 @@ class LibraryRequestHandler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/reset":
             with open(DB_FILE, "w", encoding="utf-8") as f:
                 json.dump({"books": [], "schedules": []}, f, indent=2, ensure_ascii=False)
-            # Remove all files from uploads folder
             for fname in os.listdir(UPLOADS_DIR):
                 fpath = os.path.join(UPLOADS_DIR, fname)
                 if os.path.isfile(fpath):
@@ -191,7 +224,7 @@ class LibraryRequestHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
-        # API: Delete Book -> /api/books/<id>
+        # API: Delete Book
         if path.startswith("/api/books/"):
             book_id = path.replace("/api/books/", "")
             db = load_db()
@@ -201,7 +234,6 @@ class LibraryRequestHandler(http.server.SimpleHTTPRequestHandler):
                 books = [b for b in books if b.get("id") != book_id]
                 db["books"] = books
                 save_db(db)
-                # Remove file if it's in uploads
                 if target.get("pdfUrl") and target.get("pdfUrl").startswith("/uploads/"):
                     fname = os.path.basename(target["pdfUrl"])
                     fpath = os.path.join(UPLOADS_DIR, fname)
@@ -213,7 +245,7 @@ class LibraryRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return self.send_json({"success": True})
             return self.send_json({"success": False, "message": "Buku tidak ditemukan"}, status_code=404)
 
-        # API: Delete Schedule -> /api/schedules/<id>
+        # API: Delete Schedule
         if path.startswith("/api/schedules/"):
             sched_id = path.replace("/api/schedules/", "")
             db = load_db()
@@ -232,18 +264,15 @@ def main():
     network_url = f"http://{local_ip}:{PORT}"
 
     print("\n" + "=" * 65)
-    print("      🚀 SERVER PERPUSTAKAAN MANDIRI (TERKONEKSI KE HP)")
+    print("      🚀 PERPUSTAKAAN MANDIRI - SERVER RESMI BERJALAN")
     print("=" * 65)
     print(f" 💻 Akses di Laptop/PC : {local_url}")
-    print(f" 📱 Akses di HP/Mobile  : {network_url}")
-    print("-" * 65)
-    print(" 💡 TIPS AKSES DI HP:")
-    print(f" 1. Pastikan HP dan Laptop terhubung ke Wi-Fi yang sama.")
-    print(f" 2. Buka browser HP (Chrome/Safari), ketik: {network_url}")
-    print(" 3. Semua buku PDF & jadwal yang dimasukkan di laptop")
-    print("    akan LANGSUNG MUNCUL di HP secara otomatis!")
-    print("=" * 65)
-    print(" Tekan CTRL + C untuk menghentikan server.\n")
+    print(f" 📶 Akses Wi-Fi Lokal  : {network_url}")
+    print(" ⏳ Menghubungkan Link Internet Publik (Cloudflare)...")
+
+    # Start Cloudflare Tunnel in background thread for public internet access
+    t = threading.Thread(target=start_cloudflared_tunnel, daemon=True)
+    t.start()
 
     # Open local browser
     try:
@@ -252,12 +281,18 @@ def main():
         pass
 
     socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), LibraryRequestHandler) as httpd:
-        try:
+    try:
+        with socketserver.TCPServer(("", PORT), LibraryRequestHandler) as httpd:
             httpd.serve_forever()
-        except KeyboardInterrupt:
-            print("\nServer Perpustakaan Mandiri dihentikan.")
-            sys.exit(0)
+    except KeyboardInterrupt:
+        print("\nMematikan Server Perpustakaan Mandiri...")
+    finally:
+        if cloudflared_proc:
+            try:
+                cloudflared_proc.terminate()
+            except Exception:
+                pass
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()

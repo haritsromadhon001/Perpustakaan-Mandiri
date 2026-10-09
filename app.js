@@ -28,6 +28,9 @@ class DataRepository {
   }
 
   async init() {
+    // Purge any legacy dummy books stored in device's local IndexedDB
+    await this.purgeLegacyLocalData();
+
     // Check if Central Python Server is active
     try {
       const res = await fetch('/api/info', { cache: 'no-store' });
@@ -59,6 +62,33 @@ class DataRepository {
         resolve();
       };
       request.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async purgeLegacyLocalData() {
+    return new Promise((resolve) => {
+      try {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onsuccess = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('books')) return resolve();
+          const tx = db.transaction(['books', 'schedules'], 'readwrite');
+          const bookStore = tx.objectStore('books');
+          const schedStore = tx.objectStore('schedules');
+
+          const dummyIds = ['book-1', 'book-2', 'book-3', 'book-4', 'book-5'];
+          dummyIds.forEach((id) => bookStore.delete(id));
+
+          const dummyScheds = ['sched-1', 'sched-2', 'sched-3', 'sched-4'];
+          dummyScheds.forEach((id) => schedStore.delete(id));
+
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => resolve();
+        };
+        req.onerror = () => resolve();
+      } catch {
+        resolve();
+      }
     });
   }
 
@@ -1034,22 +1064,35 @@ function closePdfReader() {
 // ==============================================================================
 async function openMobileSyncModal() {
   let targetUrl = window.location.origin;
+  let isPublic = false;
 
-  if (isServerOnline && serverInfo && serverInfo.serverIp) {
-    targetUrl = `http://${serverInfo.serverIp}:${serverInfo.port || 8000}`;
-  } else {
-    // If opened directly from file:/// or localhost without serverInfo
-    try {
-      const res = await fetch('/api/info', { cache: 'no-store' });
-      if (res.ok) {
-        const info = await res.json();
-        targetUrl = info.url || `http://${info.serverIp}:${info.port}`;
+  try {
+    const res = await fetch('/api/info', { cache: 'no-store' });
+    if (res.ok) {
+      serverInfo = await res.json();
+      if (serverInfo.publicUrl) {
+        targetUrl = serverInfo.publicUrl;
+        isPublic = true;
+      } else if (serverInfo.networkUrl) {
+        targetUrl = serverInfo.networkUrl;
       }
-    } catch {}
-  }
+    }
+  } catch {}
 
   document.getElementById('mobile-url-input').value = targetUrl;
   
+  const badgeText = document.getElementById('mobile-sync-badge-text');
+  const badgePill = document.getElementById('mobile-sync-mode-pill');
+  if (badgeText && badgePill) {
+    if (isPublic) {
+      badgeText.textContent = 'Link Internet Publik Aktif (Bisa dari mana saja tanpa Wi-Fi)';
+      badgePill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 mb-3';
+    } else {
+      badgeText.textContent = 'Menghubungkan Link Publik... (Atau buka via Wi-Fi)';
+      badgePill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 mb-3';
+    }
+  }
+
   // Generate high-resolution QR code
   const qrImg = document.getElementById('qr-code-img');
   qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(targetUrl)}&margin=10`;
@@ -1072,6 +1115,28 @@ function copyMobileUrl() {
     }, 2000);
     showToast('Tautan berhasil disalin ke papan klip!', 'success');
   });
+}
+
+async function cleanMobileCacheAndReload() {
+  if (confirm('Bersihkan seluruh memori dan cache di HP ini? Halaman akan dimuat ulang dalam kondisi kosong bersih.')) {
+    try {
+      if (window.indexedDB) {
+        indexedDB.deleteDatabase(DB_NAME);
+      }
+      localStorage.clear();
+      sessionStorage.clear();
+      if ('caches' in window) {
+        const cacheKeys = await caches.keys();
+        await Promise.all(cacheKeys.map(key => caches.delete(key)));
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    showToast('Cache HP telah dibersihkan! Memuat ulang...', 'success');
+    setTimeout(() => {
+      window.location.reload(true);
+    }, 500);
+  }
 }
 
 // ==============================================================================
