@@ -221,94 +221,10 @@ class DataRepository {
 const dataRepo = new DataRepository();
 
 // ==============================================================================
-// 2. HELPER UNTUK SAMPLE PDF (JIKA OFFLINE / FALLBACK)
+// 2. INITIALIZATION HELPER (STARTS COMPLETELY EMPTY)
 // ==============================================================================
-function createSamplePdfBlob(title, author, category) {
-  const content = `BT /F1 18 Tf 50 720 Td (${title}) Tj ET ` +
-                  `BT /F1 12 Tf 50 690 Td (Penulis: ${author}) Tj ET ` +
-                  `BT /F1 12 Tf 50 670 Td (Kategori: ${category}) Tj ET ` +
-                  `BT /F1 11 Tf 50 630 Td (Perpustakaan Mandiri - Berkas Digital) Tj ET ` +
-                  `BT /F1 11 Tf 50 610 Td (Dokumen ini dapat dibaca di Laptop dan Smartphone HP Anda.) Tj ET`;
-
-  const streamLength = content.length;
-  const pdfString = 
-`%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
-endobj
-4 0 obj
-<< /Length ${streamLength} >>
-stream
-${content}
-endstream
-endobj
-5 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
-endobj
-xref
-0 6
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000224 00000 n 
-0000000300 00000 n 
-trailer
-<< /Size 6 /Root 1 0 R >>
-startxref
-377
-%%EOF`;
-
-  return new Blob([pdfString], { type: 'application/pdf' });
-}
-
-// Fallback seed for IndexedDB if server is unavailable
 async function seedDefaultDataIfEmpty() {
-  if (isServerOnline) return; // Server already handles database seeding
-
-  const books = await dataRepo.getAllBooks();
-  if (books.length > 0) return;
-
-  const sampleBooks = [
-    {
-      id: 'book-1',
-      title: 'Riyadhus Shalihin: Panduan Akhlak & Amal Shalih',
-      author: 'Imam An-Nawawi',
-      category: 'Keagamaan',
-      totalPages: 420,
-      currentPage: 85,
-      status: 'Sedang Dibaca',
-      notes: 'Kitab rujukan adab, hadits-hadits fadhilah amal, dan pensucian jiwa.',
-      coverGradient: 'from-emerald-700 to-teal-950',
-      pdfFileName: 'Riyadhus_Shalihin_Ringkasan.pdf',
-      pdfBlob: createSamplePdfBlob('Riyadhus Shalihin', 'Imam An-Nawawi', 'Keagamaan'),
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 'book-2',
-      title: 'Fundamental Jaringan Komputer, Subnetting & TCP/IP',
-      author: 'Andrew S. Tanenbaum & Tim Jaringan',
-      category: 'Network Engineer',
-      totalPages: 310,
-      currentPage: 120,
-      status: 'Sedang Dibaca',
-      notes: 'Dasar OSI Layer, perhitungan subnetting VLSM/CIDR, dan protokol TCP/IP.',
-      coverGradient: 'from-sky-700 to-indigo-950',
-      pdfFileName: 'Networking_Fundamentals_TCP_IP.pdf',
-      pdfBlob: createSamplePdfBlob('Fundamental Jaringan Komputer', 'Andrew S. Tanenbaum', 'Network Engineer'),
-      createdAt: new Date().toISOString()
-    }
-  ];
-
-  for (const b of sampleBooks) {
-    await dataRepo.saveBook(b);
-  }
+  // Website dibiarkan dalam kondisi bersih & kosong agar pengguna dapat menambahkan koleksi sendiri.
 }
 
 // ==============================================================================
@@ -554,10 +470,18 @@ async function renderLandingView() {
 
   if (featured.length === 0) {
     previewContainer.innerHTML = `
-      <div class="col-span-full text-center py-6 text-slate-400 text-xs">
-        Belum ada koleksi buku. Silakan klik tombol "Buka Rak Buku" untuk menambahkan buku.
+      <div class="col-span-full text-center py-10 px-4 bg-white/70 rounded-2xl border border-dashed border-amber-300/80">
+        <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="book-open" class="w-6 h-6"></i>
+        </div>
+        <h4 class="font-bold text-slate-800 text-sm font-serif">Rak Buku Masih Bersih & Kosong</h4>
+        <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Belum ada buku di dalam rak. Mulai masukkan file PDF atau buku pertama Anda!</p>
+        <button onclick="openAddBookModal()" class="mt-4 px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-2 transition-all">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Buku Pertama Sekarang
+        </button>
       </div>
     `;
+    lucide.createIcons();
     return;
   }
 
@@ -1010,11 +934,6 @@ async function handleSaveBook(e) {
       pdfBlob = pendingPdfFile;
       pdfFileName = pendingPdfFile.name;
     }
-  } else if (!isEdit && !pdfUrl && !pdfBlob) {
-    if (!isServerOnline) {
-      pdfBlob = createSamplePdfBlob(title, author, category);
-      pdfFileName = `${title.replace(/\s+/g, '_')}_Preview.pdf`;
-    }
   }
 
   const bookData = {
@@ -1263,9 +1182,9 @@ async function importLibraryData(event) {
 
 async function confirmResetData() {
   toggleDataMenu();
-  if (confirm('Apakah Anda yakin ingin mengatur ulang data ke contoh awal? Semua buku & jadwal buatan Anda akan diganti ke contoh awal.')) {
+  if (confirm('Apakah Anda yakin ingin mengosongkan seluruh data buku dan jadwal baca? Database akan kembali kosong bersih.')) {
     await dataRepo.resetData();
-    showToast('Perpustakaan direset ke data awal.', 'info');
+    showToast('Seluruh data perpustakaan telah dikosongkan.', 'info');
     renderDashboardView();
     renderLandingView();
     renderScheduleView();
