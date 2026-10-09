@@ -45,7 +45,7 @@ Aplikasi ini dibuat dengan pendekatan **Zero-Dependency & Offline-First**, artin
 Anda memiliki 2 cara yang sangat mudah untuk membukanya:
 
 ### Cara 1: Menggunakan File Peluncur (Sangat Disarankan)
-1. Buka folder `c:\Users\Harits\Documents\Website_Perpustakaan Mandiri`.
+1. Buka folder, contoh di file yang dimiliki oleh author `c:\Users\Harits\Documents\Website_Perpustakaan Mandiri`.
 2. Klik dua kali pada file **`jalankan_perpustakaan.bat`**.
 3. Peramban web (Google Chrome / Edge) Anda akan langsung terbuka secara otomatis di alamat `http://localhost:8000`.
 
