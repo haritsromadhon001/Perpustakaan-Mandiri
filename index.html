@@ -61,6 +61,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
 
+  <!-- Supabase Cloud SDK (Untuk Sinkronisasi Multi-Device Vercel) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <!-- Custom Styles with Cache Busting -->
   <link rel="stylesheet" href="style.css?v=2.5.0" />
 </head>
@@ -101,6 +104,12 @@
 
         <!-- Right Quick Actions -->
         <div class="flex items-center gap-2">
+          <!-- Status & Pengaturan Database Cloud Supabase -->
+          <button onclick="openCloudConfigModal()" id="cloudStatusBtn" class="px-2.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shadow-2xs" title="Pengaturan Database Cloud (Supabase)">
+            <span id="cloudStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+            <span id="cloudStatusText" class="hidden md:inline">Cloud Database</span>
+          </button>
+
           <!-- Tombol Akses HP -->
           <button onclick="openMobileSyncModal()" class="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 active:scale-95 shadow-2xs" title="Buka di HP">
             <i data-lucide="smartphone" class="w-4 h-4 text-amber-700"></i>
@@ -861,6 +870,82 @@
       <button onclick="closeMobileSyncModal()" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-colors">
         Tutup Jendela
       </button>
+
+    </div>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- MODAL 5: PENGATURAN SUPABASE CLOUD DATABASE (VERCEL SYNC) -->
+  <!-- ============================================================== -->
+  <div id="modal-cloud-config" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 my-8 animate-scale-in">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+            <i data-lucide="cloud" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold font-serif text-slate-900">Database Cloud (Supabase)</h3>
+            <p class="text-xs text-slate-500">Sinkronkan data di Vercel antara Laptop & HP</p>
+          </div>
+        </div>
+        <button onclick="closeCloudConfigModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Current Connection Banner -->
+      <div id="cloud-modal-status-banner" class="p-3 rounded-2xl mb-4 text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+        <span id="cloud-modal-status-text">Belum terhubung ke Supabase Cloud (Menggunakan penyimpanan lokal).</span>
+      </div>
+
+      <form onsubmit="handleSaveCloudConfig(event)" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">
+            Supabase Project URL <span class="text-red-500">*</span>
+          </label>
+          <input type="url" id="cloud-supabase-url" required placeholder="https://xxxxxxxx.supabase.co" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono text-slate-800" />
+          <p class="text-[11px] text-slate-400 mt-1">Ditemukan di Supabase Dashboard -> Project Settings -> API</p>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">
+            Supabase Anon Public Key <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="cloud-supabase-key" required placeholder="eyJhbGciOiJIUzI1NiIsInR5..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono text-slate-800" />
+          <p class="text-[11px] text-slate-400 mt-1">Ditemukan di Supabase Dashboard -> Project Settings -> API (anon public)</p>
+        </div>
+
+        <!-- 1-Click SQL Setup Script Box -->
+        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-[11px] text-slate-700 flex items-center gap-1.5">
+              <i data-lucide="database" class="w-3.5 h-3.5 text-emerald-600"></i> Script SQL Tabel & Bucket Supabase
+            </span>
+            <button type="button" onclick="copySupabaseSQLScript()" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 font-semibold text-[10px] flex items-center gap-1 shadow-2xs">
+              <i data-lucide="copy" class="w-3 h-3"></i> <span id="copy-sql-btn-text">Salin SQL</span>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-500 leading-relaxed">
+            Salin script SQL ini, lalu jalankan di menu <strong>SQL Editor</strong> pada Supabase Anda untuk membuat tabel dan izin penyimpanan secara otomatis!
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeCloudConfigModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium">
+            Tutup
+          </button>
+          <button type="button" onclick="handleDisconnectCloud()" class="px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 font-semibold">
+            Putuskan
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center gap-1.5 shadow-sm transition-colors">
+            <i data-lucide="check" class="w-4 h-4"></i> Simpan & Hubungkan
+          </button>
+        </div>
+      </form>
 
     </div>
   </div>

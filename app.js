@@ -1,9 +1,20 @@
 /**
  * ==============================================================================
  * PERPUSTAKAAN MANDIRI - APPLICATION CORE JAVASCRIPT
- * Dual-Mode Engine: Centralized Server API (Sync across PC & HP) + Local Fallback
+ * Triple-Engine Architecture:
+ * 1. Supabase Cloud (Vercel Production - Sync Laptop & HP 24/7 Tanpa Server Laptop)
+ * 2. Local Python Server (Localhost & Wi-Fi / Cloudflare Tunnel)
+ * 3. Offline IndexedDB Fallback
  * ==============================================================================
  */
+
+// ==============================================================================
+// 0. KONFIGURASI SUPABASE CLOUD (UNTUK DEPLOYMENT VERCEL)
+// ==============================================================================
+// Anda bisa menempelkan URL & Anon Key Supabase Anda di sini, ATAU
+// mengisinya lewat tombol "Cloud Database" di navbar website!
+const DEFAULT_SUPABASE_URL = "";  // Contoh: "https://xyzproject.supabase.co"
+const DEFAULT_SUPABASE_KEY = "";  // Contoh: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 // Global State
 let currentView = 'landing';
@@ -15,9 +26,11 @@ let activePdfObjectUrl = null;
 let pendingPdfFile = null;
 let serverInfo = null;
 let isServerOnline = false;
+let isSupabaseActive = false;
+let supabaseClient = null;
 
 // ==============================================================================
-// 1. DATA ACCESS LAYER (CENTRAL SERVER API + LOCAL FALLBACK)
+// 1. DATA ACCESS LAYER (SUPABASE CLOUD + LOCAL SERVER + INDEXEDDB FALLBACK)
 // ==============================================================================
 const DB_NAME = 'PerpustakaanMandiriDB';
 const DB_VERSION = 1;
@@ -25,27 +38,59 @@ const DB_VERSION = 1;
 class DataRepository {
   constructor() {
     this.idb = null;
+    this.supabase = null;
+    this.mode = 'local'; // 'supabase', 'server', 'indexeddb'
   }
 
   async init() {
-    // Purge any legacy dummy books stored in device's local IndexedDB
+    // 1. Selalu bersihkan buku dummy lawas di memori HP jika ada
     await this.purgeLegacyLocalData();
 
-    // Check if Central Python Server is active
+    // 2. Cek apakah ada konfigurasi Supabase (dari variabel kode atau dari memori input)
+    const storedUrl = localStorage.getItem('PERPUS_SUPABASE_URL');
+    const storedKey = localStorage.getItem('PERPUS_SUPABASE_KEY');
+    const supaUrl = DEFAULT_SUPABASE_URL || storedUrl;
+    const supaKey = DEFAULT_SUPABASE_KEY || storedKey;
+
+    if (supaUrl && supaKey && window.supabase) {
+      try {
+        this.supabase = window.supabase.createClient(supaUrl, supaKey);
+        // Test query sederhana untuk memastikan koneksi valid
+        const { error } = await this.supabase.from('books').select('id').limit(1);
+        if (!error) {
+          this.mode = 'supabase';
+          isSupabaseActive = true;
+          supabaseClient = this.supabase;
+          this.updateCloudStatusUI(true, 'Supabase Cloud Aktif (Sinkron di Vercel)');
+          console.log('⚡ Terhubung ke Supabase Cloud Database!');
+          return;
+        } else {
+          console.warn('Supabase terdeteksi tapi query error:', error.message);
+        }
+      } catch (err) {
+        console.warn('Gagal menginisialisasi Supabase:', err);
+      }
+    }
+
+    // 3. Jika Supabase belum aktif, cek apakah terhubung ke Server Python lokal
     try {
       const res = await fetch('/api/info', { cache: 'no-store' });
       if (res.ok) {
         serverInfo = await res.json();
         isServerOnline = true;
-        console.log('Central Server Connected:', serverInfo);
+        this.mode = 'server';
+        this.updateCloudStatusUI(false, 'Server Python Lokal Aktif');
+        console.log('⚡ Terhubung ke Server Python Lokal:', serverInfo);
         return;
       }
     } catch {
-      console.warn('Central server offline. Falling back to local browser IndexedDB.');
+      // Server lokal tidak aktif (misal dibuka langsung di Vercel tanpa Supabase)
       isServerOnline = false;
     }
 
-    // Fallback: Initialize browser IndexedDB
+    // 4. Fallback terakhir: Browser IndexedDB lokal
+    this.mode = 'indexeddb';
+    this.updateCloudStatusUI(false, 'Mode Lokal (Belum Terhubung Cloud)');
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onupgradeneeded = (e) => {
@@ -65,9 +110,37 @@ class DataRepository {
     });
   }
 
+  updateCloudStatusUI(isOnline, statusText) {
+    const dot = document.getElementById('cloudStatusDot');
+    const text = document.getElementById('cloudStatusText');
+    const banner = document.getElementById('cloud-modal-status-banner');
+    const bannerText = document.getElementById('cloud-modal-status-text');
+
+    if (dot && text) {
+      if (isOnline) {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50';
+        text.textContent = 'Cloud Aktif ✓';
+      } else {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse';
+        text.textContent = 'Cloud Sync';
+      }
+    }
+
+    if (banner && bannerText) {
+      if (isOnline) {
+        banner.className = 'p-3 rounded-2xl mb-4 text-xs font-medium bg-emerald-50 text-emerald-900 border border-emerald-200 flex items-center gap-2';
+        bannerText.textContent = `✓ ${statusText}`;
+      } else {
+        banner.className = 'p-3 rounded-2xl mb-4 text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-2';
+        bannerText.textContent = `⚠️ ${statusText}. Masukkan Project URL & Anon Key di bawah ini agar Vercel otomatis tersinkron di HP!`;
+      }
+    }
+  }
+
   async purgeLegacyLocalData() {
     return new Promise((resolve) => {
       try {
+        if (!window.indexedDB) return resolve();
         const req = indexedDB.open(DB_NAME, DB_VERSION);
         req.onsuccess = (e) => {
           const db = e.target.result;
@@ -92,9 +165,39 @@ class DataRepository {
     });
   }
 
-  // --- Books ---
+  // --- Books CRUD ---
   async getAllBooks() {
-    if (isServerOnline) {
+    // Mode Supabase Cloud (Vercel)
+    if (this.mode === 'supabase' && this.supabase) {
+      try {
+        const { data, error } = await this.supabase
+          .from('books')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          return data.map((b) => ({
+            id: b.id,
+            title: b.title,
+            author: b.author,
+            category: b.category,
+            totalPages: b.total_pages || 100,
+            currentPage: b.current_page || 0,
+            status: b.status || 'Belum Dibaca',
+            notes: b.notes || '',
+            coverGradient: b.cover_gradient,
+            pdfUrl: b.pdf_url,
+            pdfFileName: b.pdf_file_name,
+            createdAt: b.created_at
+          }));
+        }
+      } catch (err) {
+        console.error('Supabase fetch books error:', err);
+      }
+    }
+
+    // Mode Server Python Lokal
+    if (this.mode === 'server') {
       try {
         const res = await fetch('/api/books', { cache: 'no-store' });
         if (res.ok) return await res.json();
@@ -103,7 +206,7 @@ class DataRepository {
       }
     }
 
-    // Local IndexedDB fallback
+    // Mode IndexedDB Lokal
     return new Promise((resolve) => {
       if (!this.idb) return resolve([]);
       const tx = this.idb.transaction('books', 'readonly');
@@ -120,7 +223,33 @@ class DataRepository {
   }
 
   async saveBook(book) {
-    if (isServerOnline) {
+    // Mode Supabase Cloud (Vercel)
+    if (this.mode === 'supabase' && this.supabase) {
+      const payload = {
+        id: book.id,
+        title: book.title,
+        author: book.author,
+        category: book.category,
+        total_pages: book.totalPages,
+        current_page: book.currentPage,
+        status: book.status,
+        notes: book.notes,
+        cover_gradient: book.coverGradient,
+        pdf_url: book.pdfUrl,
+        pdf_file_name: book.pdfFileName,
+        created_at: book.createdAt || new Date().toISOString()
+      };
+
+      const { data, error } = await this.supabase
+        .from('books')
+        .upsert([payload]);
+
+      if (error) throw error;
+      return book;
+    }
+
+    // Mode Server Python Lokal
+    if (this.mode === 'server') {
       const res = await fetch('/api/books', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -129,7 +258,7 @@ class DataRepository {
       return await res.json();
     }
 
-    // Local IndexedDB fallback
+    // Mode IndexedDB Lokal
     return new Promise((resolve, reject) => {
       if (!this.idb) return resolve(book);
       const tx = this.idb.transaction('books', 'readwrite');
@@ -141,7 +270,15 @@ class DataRepository {
   }
 
   async deleteBook(id) {
-    if (isServerOnline) {
+    if (this.mode === 'supabase' && this.supabase) {
+      const { error } = await this.supabase
+        .from('books')
+        .delete()
+        .eq('id', id);
+      return !error;
+    }
+
+    if (this.mode === 'server') {
       const res = await fetch(`/api/books/${id}`, { method: 'DELETE' });
       return res.ok;
     }
@@ -156,9 +293,38 @@ class DataRepository {
     });
   }
 
-  // --- PDF Upload to Server ---
+  // --- Upload File PDF ke Cloud Storage / Server ---
   async uploadPdfFile(file) {
-    if (isServerOnline) {
+    // Mode Supabase Storage (Vercel)
+    if (this.mode === 'supabase' && this.supabase) {
+      const fileExt = file.name.split('.').pop() || 'pdf';
+      const cleanBase = file.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 25);
+      const uniqueFileName = `${Date.now()}_${cleanBase}.${fileExt}`;
+
+      const { data, error } = await this.supabase.storage
+        .from('books-pdf')
+        .upload(uniqueFileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) {
+        console.error('Supabase storage upload error:', error);
+        throw new Error(`Gagal upload ke Supabase Storage: ${error.message}`);
+      }
+
+      const { data: publicUrlData } = this.supabase.storage
+        .from('books-pdf')
+        .getPublicUrl(uniqueFileName);
+
+      return {
+        url: publicUrlData.publicUrl,
+        fileName: file.name
+      };
+    }
+
+    // Mode Server Python Lokal
+    if (this.mode === 'server') {
       const res = await fetch('/api/upload', {
         method: 'POST',
         headers: {
@@ -168,15 +334,43 @@ class DataRepository {
         body: file
       });
       if (res.ok) {
-        return await res.json(); // { url: '/uploads/...', fileName: '...', size: ... }
+        return await res.json();
       }
     }
+
     return null;
   }
 
-  // --- Schedules ---
+  // --- Schedules CRUD ---
   async getAllSchedules() {
-    if (isServerOnline) {
+    if (this.mode === 'supabase' && this.supabase) {
+      try {
+        const { data, error } = await this.supabase
+          .from('schedules')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          return data.map((s) => ({
+            id: s.id,
+            bookId: s.book_id,
+            bookTitle: s.book_title,
+            title: s.title,
+            date: s.date,
+            time: s.time,
+            targetPages: s.target_pages,
+            status: s.status || 'Rencana',
+            completed: s.completed || false,
+            notes: s.notes || '',
+            createdAt: s.created_at
+          }));
+        }
+      } catch (err) {
+        console.error('Supabase fetch schedules error:', err);
+      }
+    }
+
+    if (this.mode === 'server') {
       try {
         const res = await fetch('/api/schedules', { cache: 'no-store' });
         if (res.ok) return await res.json();
@@ -196,7 +390,30 @@ class DataRepository {
   }
 
   async saveSchedule(schedule) {
-    if (isServerOnline) {
+    if (this.mode === 'supabase' && this.supabase) {
+      const payload = {
+        id: schedule.id,
+        book_id: schedule.bookId,
+        book_title: schedule.bookTitle,
+        title: schedule.title,
+        date: schedule.date,
+        time: schedule.time,
+        target_pages: schedule.targetPages,
+        status: schedule.status,
+        completed: schedule.completed,
+        notes: schedule.notes,
+        created_at: schedule.createdAt || new Date().toISOString()
+      };
+
+      const { data, error } = await this.supabase
+        .from('schedules')
+        .upsert([payload]);
+
+      if (error) throw error;
+      return schedule;
+    }
+
+    if (this.mode === 'server') {
       const res = await fetch('/api/schedules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -216,7 +433,15 @@ class DataRepository {
   }
 
   async deleteSchedule(id) {
-    if (isServerOnline) {
+    if (this.mode === 'supabase' && this.supabase) {
+      const { error } = await this.supabase
+        .from('schedules')
+        .delete()
+        .eq('id', id);
+      return !error;
+    }
+
+    if (this.mode === 'server') {
       const res = await fetch(`/api/schedules/${id}`, { method: 'DELETE' });
       return res.ok;
     }
@@ -232,12 +457,17 @@ class DataRepository {
   }
 
   async resetData() {
-    if (isServerOnline) {
+    if (this.mode === 'supabase' && this.supabase) {
+      await this.supabase.from('books').delete().neq('id', '___none___');
+      await this.supabase.from('schedules').delete().neq('id', '___none___');
+      return true;
+    }
+
+    if (this.mode === 'server') {
       await fetch('/api/reset', { method: 'POST' });
       return true;
     }
 
-    // Local IndexedDB clear
     return new Promise((resolve) => {
       if (!this.idb) return resolve(true);
       const tx = this.idb.transaction(['books', 'schedules'], 'readwrite');
@@ -881,12 +1111,12 @@ async function openEditBookModal(bookId) {
   pendingPdfFile = null;
   document.getElementById('book-pdf-input').value = '';
 
-  if (book.pdfFileName) {
+  if (book.pdfFileName || book.pdfUrl) {
     document.getElementById('pdf-selected-badge').classList.remove('hidden');
     document.getElementById('pdf-upload-info').classList.add('hidden');
-    document.getElementById('pdf-filename-label').textContent = `Tersimpan: ${book.pdfFileName}`;
+    document.getElementById('pdf-filename-label').textContent = `Tersimpan: ${book.pdfFileName || 'Berkas PDF'}`;
     document.getElementById('pdf-existing-info').textContent =
-      'Buku ini sudah memiliki file PDF. Unggah lagi jika ingin menggantinya.';
+      'Buku ini sudah memiliki file PDF di cloud/server. Unggah lagi jika ingin menggantinya.';
     document.getElementById('pdf-existing-info').classList.remove('hidden');
   } else {
     document.getElementById('pdf-selected-badge').classList.add('hidden');
@@ -951,18 +1181,18 @@ async function handleSaveBook(e) {
 
   // Handle PDF upload
   if (pendingPdfFile) {
-    showToast('Mengunggah file PDF ke server...', 'info');
-    if (isServerOnline) {
+    showToast('Mengunggah file PDF ke Cloud Database...', 'info');
+    try {
       const uploadRes = await dataRepo.uploadPdfFile(pendingPdfFile);
       if (uploadRes) {
         pdfUrl = uploadRes.url;
-        pdfFileName = pendingPdfFile.name;
+        pdfFileName = uploadRes.fileName || pendingPdfFile.name;
         pdfBlob = null;
       }
-    } else {
-      // Local fallback
-      pdfBlob = pendingPdfFile;
-      pdfFileName = pendingPdfFile.name;
+    } catch (uploadErr) {
+      console.error(uploadErr);
+      showToast(`Upload gagal: ${uploadErr.message}`, 'error');
+      return;
     }
   }
 
@@ -983,16 +1213,21 @@ async function handleSaveBook(e) {
     updatedAt: new Date().toISOString()
   };
 
-  await dataRepo.saveBook(bookData);
-  closeBookModal();
-  showToast(`Buku "${title}" berhasil disimpan! Sinkron ke semua perangkat.`, 'success');
+  try {
+    await dataRepo.saveBook(bookData);
+    closeBookModal();
+    showToast(`Buku "${title}" berhasil disimpan di Cloud! Tersinkron di semua HP & PC.`, 'success');
 
-  if (currentView === 'dashboard') {
-    renderDashboardView();
-  } else if (currentView === 'landing') {
-    renderLandingView();
+    if (currentView === 'dashboard') {
+      renderDashboardView();
+    } else if (currentView === 'landing') {
+      renderLandingView();
+    }
+    updateStatistics();
+  } catch (saveErr) {
+    console.error(saveErr);
+    showToast(`Gagal menyimpan: ${saveErr.message}`, 'error');
   }
-  updateStatistics();
 }
 
 async function confirmDeleteBook(id) {
@@ -1001,7 +1236,7 @@ async function confirmDeleteBook(id) {
 
   if (confirm(`Apakah Anda yakin ingin menghapus "${title}" dari rak perpustakaan?`)) {
     await dataRepo.deleteBook(id);
-    showToast('Buku telah dihapus dari rak.', 'info');
+    showToast('Buku telah dihapus dari cloud.', 'info');
     renderDashboardView();
     updateStatistics();
   }
@@ -1060,40 +1295,176 @@ function closePdfReader() {
 }
 
 // ==============================================================================
-// 11. MOBILE SYNC MODAL & QR CODE
+// 11. SUPABASE CLOUD CONFIGURATION MODAL
 // ==============================================================================
-async function openMobileSyncModal() {
-  let targetUrl = window.location.origin;
-  let isPublic = false;
+function openCloudConfigModal() {
+  const storedUrl = localStorage.getItem('PERPUS_SUPABASE_URL') || DEFAULT_SUPABASE_URL;
+  const storedKey = localStorage.getItem('PERPUS_SUPABASE_KEY') || DEFAULT_SUPABASE_KEY;
+
+  document.getElementById('cloud-supabase-url').value = storedUrl || '';
+  document.getElementById('cloud-supabase-key').value = storedKey || '';
+
+  dataRepo.updateCloudStatusUI(
+    isSupabaseActive,
+    isSupabaseActive
+      ? 'Supabase Cloud Aktif (Sinkron di Vercel)'
+      : 'Belum Terhubung ke Supabase Cloud'
+  );
+
+  document.getElementById('modal-cloud-config').classList.remove('hidden');
+}
+
+function closeCloudConfigModal() {
+  document.getElementById('modal-cloud-config').classList.add('hidden');
+}
+
+async function handleSaveCloudConfig(e) {
+  e.preventDefault();
+  const url = document.getElementById('cloud-supabase-url').value.trim();
+  const key = document.getElementById('cloud-supabase-key').value.trim();
+
+  if (!url || !key) {
+    alert('Harap isi Project URL dan Anon Key Supabase Anda!');
+    return;
+  }
+
+  showToast('Menguji koneksi ke Supabase Cloud...', 'info');
 
   try {
-    const res = await fetch('/api/info', { cache: 'no-store' });
-    if (res.ok) {
-      serverInfo = await res.json();
-      if (serverInfo.publicUrl) {
-        targetUrl = serverInfo.publicUrl;
-        isPublic = true;
-      } else if (serverInfo.networkUrl) {
-        targetUrl = serverInfo.networkUrl;
-      }
+    const testClient = window.supabase.createClient(url, key);
+    const { error } = await testClient.from('books').select('id').limit(1);
+
+    if (error) {
+      alert(`Gagal terhubung ke Supabase: ${error.message}\n\nPastikan Anda sudah menjalankan script SQL tabel di menu SQL Editor Supabase!`);
+      return;
     }
-  } catch {}
+
+    localStorage.setItem('PERPUS_SUPABASE_URL', url);
+    localStorage.setItem('PERPUS_SUPABASE_KEY', key);
+
+    dataRepo.supabase = testClient;
+    dataRepo.mode = 'supabase';
+    isSupabaseActive = true;
+    supabaseClient = testClient;
+
+    dataRepo.updateCloudStatusUI(true, 'Supabase Cloud Aktif (Sinkron di Vercel)');
+    closeCloudConfigModal();
+    showToast('Berhasil terhubung ke Supabase Cloud! Data sekarang otomatis tersinkron di HP & PC.', 'success');
+
+    // Reload tampilan dengan data cloud
+    renderDashboardView();
+    renderLandingView();
+    renderScheduleView();
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
+function handleDisconnectCloud() {
+  if (confirm('Putuskan koneksi dari Supabase Cloud dan kembali ke penyimpanan lokal?')) {
+    localStorage.removeItem('PERPUS_SUPABASE_URL');
+    localStorage.removeItem('PERPUS_SUPABASE_KEY');
+    dataRepo.mode = 'indexeddb';
+    isSupabaseActive = false;
+    supabaseClient = null;
+    dataRepo.updateCloudStatusUI(false, 'Mode Lokal (Belum Terhubung Cloud)');
+    closeCloudConfigModal();
+    showToast('Koneksi Cloud diputuskan.', 'info');
+    renderDashboardView();
+    renderLandingView();
+    renderScheduleView();
+  }
+}
+
+function copySupabaseSQLScript() {
+  const sql = `-- ==========================================
+-- SCRIPT TABEL PERPUSTAKAAN MANDIRI (SUPABASE)
+-- Jalankan di SQL Editor Supabase Dashboard
+-- ==========================================
+
+-- 1. Tabel Buku
+create table if not exists books (
+  id text primary key,
+  title text not null,
+  author text not null,
+  category text not null,
+  total_pages int default 100,
+  current_page int default 0,
+  status text default 'Belum Dibaca',
+  notes text,
+  cover_gradient text,
+  pdf_url text,
+  pdf_file_name text,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- 2. Tabel Jadwal Baca (Notion)
+create table if not exists schedules (
+  id text primary key,
+  book_id text,
+  book_title text,
+  title text not null,
+  date text,
+  time text,
+  target_pages text,
+  status text default 'Rencana',
+  completed boolean default false,
+  notes text,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- 3. Kebijakan Keamanan (Izinkan Baca & Tulis Bebas)
+alter table books enable row level security;
+alter table schedules enable row level security;
+
+create policy "Akses bebas tabel books" on books for all using (true) with check (true);
+create policy "Akses bebas tabel schedules" on schedules for all using (true) with check (true);
+
+-- 4. Buat Storage Bucket untuk File PDF
+insert into storage.buckets (id, name, public) 
+values ('books-pdf', 'books-pdf', true)
+on conflict (id) do nothing;
+
+create policy "Akses publik upload file PDF" on storage.objects 
+for all using (bucket_id = 'books-pdf') with check (bucket_id = 'books-pdf');
+`;
+
+  navigator.clipboard.writeText(sql).then(() => {
+    const btnText = document.getElementById('copy-sql-btn-text');
+    btnText.textContent = 'Tersalin! ✓';
+    setTimeout(() => {
+      btnText.textContent = 'Salin SQL';
+    }, 2000);
+    showToast('Script SQL berhasil disalin! Buka menu SQL Editor di Supabase lalu paste & RUN.', 'success');
+  });
+}
+
+// ==============================================================================
+// 12. MOBILE SYNC MODAL & QR CODE
+// ==============================================================================
+async function openMobileSyncModal() {
+  let targetUrl = window.location.href;
+  let isCloud = isSupabaseActive;
 
   document.getElementById('mobile-url-input').value = targetUrl;
-  
+
   const badgeText = document.getElementById('mobile-sync-badge-text');
   const badgePill = document.getElementById('mobile-sync-mode-pill');
   if (badgeText && badgePill) {
-    if (isPublic) {
-      badgeText.textContent = 'Link Internet Publik Aktif (Bisa dari mana saja tanpa Wi-Fi)';
+    if (isCloud) {
+      badgeText.textContent = 'Terhubung via Supabase Cloud (Otomatis Sinkron di Vercel)';
+      badgePill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 mb-3';
+    } else if (serverInfo && serverInfo.publicUrl) {
+      targetUrl = serverInfo.publicUrl;
+      document.getElementById('mobile-url-input').value = targetUrl;
+      badgeText.textContent = 'Link Internet Publik Cloudflare Aktif';
       badgePill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 mb-3';
     } else {
-      badgeText.textContent = 'Menghubungkan Link Publik... (Atau buka via Wi-Fi)';
+      badgeText.textContent = 'Tips: Hubungkan ke Supabase agar data Vercel otomatis sinkron!';
       badgePill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 mb-3';
     }
   }
 
-  // Generate high-resolution QR code
   const qrImg = document.getElementById('qr-code-img');
   qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(targetUrl)}&margin=10`;
 
@@ -1123,11 +1494,12 @@ async function cleanMobileCacheAndReload() {
       if (window.indexedDB) {
         indexedDB.deleteDatabase(DB_NAME);
       }
-      localStorage.clear();
+      localStorage.removeItem('PERPUS_SUPABASE_URL');
+      localStorage.removeItem('PERPUS_SUPABASE_KEY');
       sessionStorage.clear();
       if ('caches' in window) {
         const cacheKeys = await caches.keys();
-        await Promise.all(cacheKeys.map(key => caches.delete(key)));
+        await Promise.all(cacheKeys.map((key) => caches.delete(key)));
       }
     } catch (e) {
       console.warn(e);
@@ -1140,7 +1512,7 @@ async function cleanMobileCacheAndReload() {
 }
 
 // ==============================================================================
-// 12. FILTER & SEARCH HANDLERS
+// 13. FILTER & SEARCH HANDLERS
 // ==============================================================================
 function filterCategory(cat) {
   selectedCategory = cat;
@@ -1174,7 +1546,7 @@ function handleBookSearch() {
 }
 
 // ==============================================================================
-// 13. BACKUP, EXPORT & RESTORE DATA
+// 14. BACKUP, EXPORT & RESTORE DATA
 // ==============================================================================
 function toggleDataMenu() {
   const menu = document.getElementById('dataMenuDropdown');
@@ -1257,7 +1629,7 @@ async function confirmResetData() {
 }
 
 // ==============================================================================
-// 14. TOAST NOTIFICATION UTILITY
+// 15. TOAST NOTIFICATION UTILITY
 // ==============================================================================
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
@@ -1296,7 +1668,7 @@ function showToast(message, type = 'info') {
 }
 
 // ==============================================================================
-// 15. UTILITIES (DATE FORMATTER & ESCAPING)
+// 16. UTILITIES (DATE FORMATTER & ESCAPING)
 // ==============================================================================
 function escapeHTML(str) {
   if (!str) return '';
@@ -1323,7 +1695,7 @@ function formatDateId(dateStr) {
 }
 
 // ==============================================================================
-// 16. INITIALIZATION ON PAGE LOAD
+// 17. INITIALIZATION ON PAGE LOAD
 // ==============================================================================
 window.addEventListener('DOMContentLoaded', async () => {
   try {
