@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perpustakaan Mandiri | Ruang Baca & Koleksi Buku Digital</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            library: {
+              50: '#fbf8f3',
+              100: '#f5efe4',
+              200: '#ebdcc7',
+              300: '#dec2a2',
+              400: '#cfa278',
+              500: '#be8353',
+              600: '#a76b42',
+              700: '#845136',
+              800: '#6d4231',
+              900: '#59382b',
+              950: '#321d16',
+            },
+            notion: {
+              bg: '#ffffff',
+              sidebar: '#f7f6f3',
+              border: '#e9e9e7',
+              card: '#ffffff',
+              hover: '#efeee9',
+              text: '#37352f',
+              muted: '#787774',
+              blue: '#0b6e99',
+              green: '#0f7b6c',
+              orange: '#d9730d',
+              red: '#e03e3e',
+              purple: '#6940a5'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+            serif: ['"Merriweather"', 'Georgia', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & Lucide Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-[#fcfaf7] text-slate-800 antialiased font-sans min-h-screen flex flex-col selection:bg-amber-200 selection:text-amber-900">
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-amber-100 shadow-sm transition-all duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Branding -->
+        <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('landing')">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-600 to-amber-800 flex items-center justify-center text-white shadow-md shadow-amber-700/20">
+            <i data-lucide="book-open-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h1 class="text-lg font-extrabold tracking-tight text-slate-900 font-serif leading-tight">Perpustakaan Mandiri</h1>
+            <p class="text-[11px] font-medium text-amber-800 tracking-wider uppercase">Personal Digital Bookshelf</p>
+          </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="hidden md:flex items-center gap-1 bg-amber-50/70 p-1 rounded-xl border border-amber-200/50">
+          <button id="nav-btn-landing" onclick="navigateTo('landing')" class="nav-tab px-4 py-2 rounded-lg text-sm font-semibold text-amber-900 bg-white shadow-xs transition-all flex items-center gap-2">
+            <i data-lucide="compass" class="w-4 h-4 text-amber-600"></i>
+            Beranda
+          </button>
+          <button id="nav-btn-dashboard" onclick="navigateTo('dashboard')" class="nav-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-amber-900 hover:bg-white/60 transition-all flex items-center gap-2">
+            <i data-lucide="layout-grid" class="w-4 h-4 text-amber-600"></i>
+            Rak Buku & Dashboard
+          </button>
+          <button id="nav-btn-schedule" onclick="navigateTo('schedule')" class="nav-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-amber-900 hover:bg-white/60 transition-all flex items-center gap-2">
+            <i data-lucide="calendar-check" class="w-4 h-4 text-amber-600"></i>
+            Jadwal Baca
+            <span id="badge-active-schedules" class="bg-amber-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">0</span>
+          </button>
+        </nav>
+
+        <!-- Right Quick Actions -->
+        <div class="flex items-center gap-2.5">
+          <button onclick="openAddBookModal()" class="px-3.5 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-sm font-medium shadow-md shadow-amber-800/20 hover:shadow-lg transition-all flex items-center gap-2 active:scale-95">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Tambah Buku PDF</span>
+          </button>
+
+          <!-- Export/Import Data Menu Dropdown Button -->
+          <div class="relative">
+            <button onclick="toggleDataMenu()" id="dataMenuBtn" class="p-2 rounded-xl text-slate-600 hover:bg-amber-100/60 border border-transparent hover:border-amber-200 transition-all" title="Cadangan Data">
+              <i data-lucide="database" class="w-5 h-5 text-slate-600"></i>
+            </button>
+            <div id="dataMenuDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 text-xs">
+              <div class="px-3 py-2 border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Penyimpanan Lokal</div>
+              <button onclick="exportLibraryData()" class="w-full text-left px-4 py-2 text-slate-700 hover:bg-amber-50 flex items-center gap-2 font-medium">
+                <i data-lucide="download" class="w-4 h-4 text-amber-600"></i> Cadangkan Data (Backup)
+              </button>
+              <label class="w-full text-left px-4 py-2 text-slate-700 hover:bg-amber-50 flex items-center gap-2 font-medium cursor-pointer">
+                <i data-lucide="upload" class="w-4 h-4 text-amber-600"></i> Pulihkan Data (Restore)
+                <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importLibraryData(event)" />
+              </label>
+              <button onclick="confirmResetData()" class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium">
+                <i data-lucide="rotate-ccw" class="w-4 h-4 text-red-500"></i> Reset ke Data Contoh
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Mobile Nav Bar (Bottom Bar) -->
+    <div class="md:hidden flex items-center justify-around border-t border-amber-100 bg-white py-2 px-3 text-xs">
+      <button onclick="navigateTo('landing')" class="flex flex-col items-center gap-1 text-slate-600 hover:text-amber-800">
+        <i data-lucide="compass" class="w-4 h-4"></i>
+        <span>Beranda</span>
+      </button>
+      <button onclick="navigateTo('dashboard')" class="flex flex-col items-center gap-1 text-amber-800 font-bold">
+        <i data-lucide="layout-grid" class="w-4 h-4"></i>
+        <span>Rak Buku</span>
+      </button>
+      <button onclick="navigateTo('schedule')" class="flex flex-col items-center gap-1 text-slate-600 hover:text-amber-800">
+        <i data-lucide="calendar-check" class="w-4 h-4"></i>
+        <span>Jadwal</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT CONTAINER ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ============================================================== -->
+    <!-- VIEW 1: LANDING PAGE -->
+    <!-- ============================================================== -->
+    <section id="view-landing" class="view-panel space-y-12">
+      
+      <!-- Hero Section -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-900 via-amber-800 to-stone-900 text-white p-8 sm:p-12 md:p-16 shadow-2xl shadow-amber-950/20">
+        <!-- Background Pattern -->
+        <div class="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-amber-500/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute right-10 bottom-0 opacity-15 pointer-events-none hidden lg:block">
+          <i data-lucide="library" class="w-96 h-96"></i>
+        </div>
+
+        <div class="relative z-10 max-w-2xl space-y-6">
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-amber-200 text-xs font-medium">
+            <span class="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Perpustakaan Pribadi Offline & Mandiri
+          </div>
+
+          <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold font-serif tracking-tight leading-tight">
+            Koleksi Ribuan Ilmu di Rak Digital Anda.
+          </h1>
+
+          <p class="text-amber-100/90 text-sm sm:text-base md:text-lg leading-relaxed font-light">
+            Simpan, kelola, dan baca buku elektronik (PDF) favorit Anda. Dari khazanah <strong class="text-white font-semibold">Keagamaan</strong> yang menyejukkan hati hingga literatur teknis <strong class="text-white font-semibold">Network Engineer</strong> untuk akselerasi karier. Dilengkapi jadwal baca interaktif ala Notion.
+          </p>
+
+          <div class="flex flex-wrap items-center gap-3 pt-2">
+            <button onclick="navigateTo('dashboard')" class="px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-sm shadow-lg shadow-amber-500/25 transition-all flex items-center gap-2 active:scale-95">
+              <i data-lucide="book-marked" class="w-4 h-4"></i>
+              Buka Rak Buku Sekarang
+            </button>
+            <button onclick="navigateTo('schedule')" class="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-sm backdrop-blur-md transition-all flex items-center gap-2">
+              <i data-lucide="calendar" class="w-4 h-4"></i>
+              Lihat Jadwal Baca
+            </button>
+            <button onclick="openAddBookModal()" class="px-4 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-amber-200 border border-white/10 text-sm transition-all flex items-center gap-2">
+              <i data-lucide="file-up" class="w-4 h-4"></i>
+              Unggah PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Mini Quick Shelf Stats on Hero -->
+        <div class="relative z-10 mt-10 pt-8 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div>
+            <p class="text-xs text-amber-200/70 font-medium uppercase tracking-wider">Total Buku</p>
+            <p id="landing-stat-total" class="text-2xl sm:text-3xl font-extrabold text-white mt-0.5">0</p>
+          </div>
+          <div>
+            <p class="text-xs text-amber-200/70 font-medium uppercase tracking-wider">Buku Keagamaan</p>
+            <p id="landing-stat-keagamaan" class="text-2xl sm:text-3xl font-extrabold text-amber-300 mt-0.5">0</p>
+          </div>
+          <div>
+            <p class="text-xs text-amber-200/70 font-medium uppercase tracking-wider">Network Engineer</p>
+            <p id="landing-stat-network" class="text-2xl sm:text-3xl font-extrabold text-sky-300 mt-0.5">0</p>
+          </div>
+          <div>
+            <p class="text-xs text-amber-200/70 font-medium uppercase tracking-wider">Jadwal Aktif</p>
+            <p id="landing-stat-schedules" class="text-2xl sm:text-3xl font-extrabold text-emerald-300 mt-0.5">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Highlight Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Feature 1: Shelves -->
+        <div class="bg-white rounded-2xl p-6 border border-amber-100/80 shadow-xs hover:shadow-md transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <i data-lucide="layers" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-2 font-serif">Kategori Khusus Berstruktur</h3>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Pemisahan rak terstruktur khusus untuk <span class="font-medium text-amber-800">Keagamaan</span> dan <span class="font-medium text-sky-700">Network Engineer</span>, dengan pencarian instan dan filter status baca.
+          </p>
+        </div>
+
+        <!-- Feature 2: PDF Management -->
+        <div class="bg-white rounded-2xl p-6 border border-amber-100/80 shadow-xs hover:shadow-md transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <i data-lucide="file-text" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-2 font-serif">Arsip File PDF Terintegrasi</h3>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Unggah file PDF buku langsung ke peramban. Baca langsung di website tanpa perlu aplikasi eksternal, tersimpan aman di IndexedDB offline Anda.
+          </p>
+        </div>
+
+        <!-- Feature 3: Notion Habit Schedule -->
+        <div class="bg-white rounded-2xl p-6 border border-amber-100/80 shadow-xs hover:shadow-md transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <i data-lucide="check-square" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-2 font-serif">Jadwal Baca Ala Notion</h3>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Disiplinkan diri dengan papan jadwal baca fleksibel (Kanban Board & List) lengkap dengan target halaman, tanggal, dan pengingat sesi baca.
+          </p>
+        </div>
+      </div>
+
+      <!-- Quick Shelf Showcase on Landing -->
+      <div class="bg-amber-50/50 rounded-2xl p-6 sm:p-8 border border-amber-200/60">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-xl sm:text-2xl font-bold font-serif text-slate-900">Buku Unggulan di Rak Anda</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Daftar buku yang baru-baru ini Anda tambahkan atau sedang dipelajari.</p>
+          </div>
+          <button onclick="navigateTo('dashboard')" class="text-sm font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1 group">
+            Lihat Semua Rak
+            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+          </button>
+        </div>
+
+        <div id="landing-books-preview" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Quote Banner -->
+      <div class="text-center py-6 border-t border-b border-amber-200/50 my-6">
+        <blockquote class="italic text-base sm:text-lg text-slate-700 font-serif max-w-2xl mx-auto">
+          "Barangsiapa menempuh jalan untuk menuntut ilmu, maka Allah akan memudahkan baginya jalan menuju surga."
+        </blockquote>
+        <p class="text-xs font-semibold text-amber-800 uppercase tracking-widest mt-2">— HR. Muslim & Motivasi Belajar</p>
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================== -->
+    <!-- VIEW 2: DASHBOARD & RAK BUKU (BOOKSHELF) -->
+    <!-- ============================================================== -->
+    <section id="view-dashboard" class="view-panel hidden space-y-6">
+
+      <!-- Dashboard Header & Real-time Statistics -->
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold font-serif text-slate-900 tracking-tight">Rak Buku & Dashboard</h2>
+            <p class="text-sm text-slate-500">Kelola koleksi buku fisik & digital Anda di satu rak yang rapi.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="openAddBookModal()" class="px-4 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-sm shadow-sm flex items-center gap-2 transition-all">
+              <i data-lucide="plus" class="w-4 h-4"></i> Tambah Koleksi PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Stat Counters Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Total Buku -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-amber-300 transition-colors">
+            <div class="w-12 h-12 rounded-xl bg-amber-100/70 text-amber-800 flex items-center justify-center shrink-0">
+              <i data-lucide="library" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Buku</p>
+              <h3 id="stat-total-books" class="text-2xl font-black text-slate-900">0</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">Tersimpan di rak</p>
+            </div>
+          </div>
+
+          <!-- Buku Keagamaan -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-amber-300 transition-colors">
+            <div class="w-12 h-12 rounded-xl bg-emerald-100/70 text-emerald-800 flex items-center justify-center shrink-0">
+              <i data-lucide="book" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Keagamaan</p>
+              <h3 id="stat-keagamaan-books" class="text-2xl font-black text-emerald-800">0</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">Kitab & Spiritualitas</p>
+            </div>
+          </div>
+
+          <!-- Buku Network Engineer -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-amber-300 transition-colors">
+            <div class="w-12 h-12 rounded-xl bg-sky-100/70 text-sky-800 flex items-center justify-center shrink-0">
+              <i data-lucide="network" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Network Engineer</p>
+              <h3 id="stat-network-books" class="text-2xl font-black text-sky-800">0</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">Jaringan & TI</p>
+            </div>
+          </div>
+
+          <!-- Selesai Dibaca & Total PDF -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-amber-300 transition-colors">
+            <div class="w-12 h-12 rounded-xl bg-violet-100/70 text-violet-800 flex items-center justify-center shrink-0">
+              <i data-lucide="file-check-2" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">File PDF Siap Baca</p>
+              <h3 id="stat-pdf-books" class="text-2xl font-black text-violet-900">0</h3>
+              <p id="stat-completed-percent" class="text-[11px] text-emerald-600 font-semibold mt-0.5">0% selesai baca</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter, Search, and Category Tab Bar -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        
+        <!-- Category Segmented Control Buttons -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+          <button onclick="filterCategory('all')" id="tab-cat-all" class="cat-pill active px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap bg-amber-700 text-white">
+            <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Semua (<span id="count-cat-all">0</span>)
+          </button>
+          <button onclick="filterCategory('Keagamaan')" id="tab-cat-keagamaan" class="cat-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
+            <i data-lucide="book-heart" class="w-3.5 h-3.5 text-emerald-600"></i> Keagamaan (<span id="count-cat-keagamaan">0</span>)
+          </button>
+          <button onclick="filterCategory('Network Engineer')" id="tab-cat-network" class="cat-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
+            <i data-lucide="server" class="w-3.5 h-3.5 text-sky-600"></i> Network Engineer (<span id="count-cat-network">0</span>)
+          </button>
+          <button onclick="filterCategory('Lainnya')" id="tab-cat-lainnya" class="cat-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
+            <i data-lucide="bookmark" class="w-3.5 h-3.5 text-slate-500"></i> Lainnya (<span id="count-cat-lainnya">0</span>)
+          </button>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="flex items-center gap-2">
+          <!-- Search Input -->
+          <div class="relative flex-1 sm:w-64">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="bookSearchInput" oninput="handleBookSearch()" placeholder="Cari judul, penulis..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-all" />
+          </div>
+
+          <!-- Status Filter -->
+          <select id="statusFilterSelect" onchange="handleBookSearch()" class="py-1.5 px-3 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 bg-white font-medium text-slate-700">
+            <option value="all">Semua Status</option>
+            <option value="Belum Dibaca">Belum Dibaca</option>
+            <option value="Sedang Dibaca">Sedang Dibaca</option>
+            <option value="Selesai">Selesai</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Books Grid (The Bookshelf) -->
+      <div id="bookshelf-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <!-- Rendered dynamically via JS -->
+      </div>
+
+      <!-- Empty State Container -->
+      <div id="empty-bookshelf" class="hidden text-center py-16 px-4 bg-white rounded-3xl border border-dashed border-amber-200 max-w-lg mx-auto">
+        <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="book-dashed" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-lg font-bold font-serif text-slate-900 mb-1">Rak Masih Kosong</h3>
+        <p class="text-xs text-slate-500 mb-6">Belum ada buku yang sesuai dengan pencarian atau filter yang dipilih. Ayo tambahkan buku PDF pertama Anda!</p>
+        <button onclick="openAddBookModal()" class="px-5 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xs shadow-md transition-all inline-flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Buku PDF Sekarang
+        </button>
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================== -->
+    <!-- VIEW 3: JADWAL BACA ALA NOTION (READING SCHEDULE) -->
+    <!-- ============================================================== -->
+    <section id="view-schedule" class="view-panel hidden space-y-6">
+
+      <!-- Notion Page Header -->
+      <div class="bg-white rounded-2xl p-6 sm:p-8 border border-notion-border shadow-xs">
+        <div class="flex items-start justify-between gap-4">
+          <div class="space-y-2">
+            <!-- Notion Icon & Title -->
+            <div class="text-4xl mb-2">🗓️</div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-notion-text tracking-tight font-serif">Jadwal & Target Baca Buku</h2>
+            <p class="text-sm text-notion-muted max-w-2xl leading-relaxed">
+              Penanda dan pengatur ritme membaca Anda dengan antarmuka terinspirasi dari <span class="font-semibold text-slate-800">Notion Database</span>. Tentukan target halaman harian, tanggal tenggat, dan pantau kemajuan membaca Anda.
+            </p>
+          </div>
+
+          <button onclick="openAddScheduleModal()" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm shadow-sm flex items-center gap-2 shrink-0 transition-all">
+            <i data-lucide="calendar-plus" class="w-4 h-4 text-amber-300"></i> Buat Jadwal Baru
+          </button>
+        </div>
+
+        <!-- Notion-style View Tabs & Controls -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mt-6 pt-5 border-t border-notion-border">
+          <div class="flex items-center gap-2">
+            <button id="sched-view-board-btn" onclick="toggleScheduleView('board')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-notion-sidebar text-notion-text border border-slate-200 flex items-center gap-1.5 transition-all">
+              <i data-lucide="kanban" class="w-3.5 h-3.5"></i> Papan Status (Board)
+            </button>
+            <button id="sched-view-table-btn" onclick="toggleScheduleView('table')" class="px-3 py-1.5 rounded-lg text-xs font-medium text-notion-muted hover:text-notion-text hover:bg-notion-sidebar flex items-center gap-1.5 transition-all">
+              <i data-lucide="table-2" class="w-3.5 h-3.5"></i> Daftar Tabel (List)
+            </button>
+          </div>
+
+          <!-- Schedule Stats pill -->
+          <div class="flex items-center gap-3 text-xs font-medium text-slate-500">
+            <span class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span id="sched-count-todo">0 Rencana</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+              <span id="sched-count-inprogress">0 Sedang Berjalan</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span id="sched-count-done">0 Selesai</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule Board View (Kanban 3 Columns) -->
+      <div id="schedule-board-container" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        
+        <!-- Column 1: Rencana Baca (To-Do) -->
+        <div class="bg-notion-sidebar/70 rounded-2xl p-4 border border-notion-border flex flex-col min-h-[450px]">
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-notion-border">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">📋 Rencana Baca</span>
+              <span id="col-count-todo" class="text-xs text-notion-muted font-bold">0</span>
+            </div>
+            <button onclick="openAddScheduleModal('Rencana')" class="text-notion-muted hover:text-notion-text p-1 hover:bg-slate-200/60 rounded" title="Tambah ke Rencana">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div id="kanban-todo-list" class="space-y-3 flex-1 overflow-y-auto pr-1">
+            <!-- Cards rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Column 2: Sedang Dibaca (In Progress) -->
+        <div class="bg-notion-sidebar/70 rounded-2xl p-4 border border-notion-border flex flex-col min-h-[450px]">
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-notion-border">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-xs font-semibold bg-sky-100 text-sky-800">📖 Sedang Berjalan</span>
+              <span id="col-count-inprogress" class="text-xs text-notion-muted font-bold">0</span>
+            </div>
+            <button onclick="openAddScheduleModal('Sedang Berjalan')" class="text-notion-muted hover:text-notion-text p-1 hover:bg-slate-200/60 rounded" title="Tambah Sesi Berjalan">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div id="kanban-inprogress-list" class="space-y-3 flex-1 overflow-y-auto pr-1">
+            <!-- Cards rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Column 3: Selesai Dibaca (Completed) -->
+        <div class="bg-notion-sidebar/70 rounded-2xl p-4 border border-notion-border flex flex-col min-h-[450px]">
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-notion-border">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">✅ Selesai</span>
+              <span id="col-count-done" class="text-xs text-notion-muted font-bold">0</span>
+            </div>
+          </div>
+          <div id="kanban-done-list" class="space-y-3 flex-1 overflow-y-auto pr-1">
+            <!-- Cards rendered dynamically -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Schedule Table View (Alternative View) -->
+      <div id="schedule-table-container" class="hidden bg-white rounded-2xl border border-notion-border overflow-hidden shadow-xs">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-notion-sidebar border-b border-notion-border text-notion-muted font-semibold uppercase tracking-wider">
+              <tr>
+                <th class="p-3 w-10 text-center">Status</th>
+                <th class="p-3">Agenda / Target Sesi</th>
+                <th class="p-3">Buku Terkait</th>
+                <th class="p-3">Jadwal Tanggal & Jam</th>
+                <th class="p-3">Target Halaman</th>
+                <th class="p-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-table-body" class="divide-y divide-notion-border">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="mt-auto border-t border-amber-200/60 bg-white/60 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <i data-lucide="book-open" class="w-4 h-4 text-amber-700"></i>
+        <span class="font-bold text-slate-700 font-serif">Perpustakaan Mandiri</span>
+        <span>— Ruang Rak Digital & Penanda Bacaan Anda</span>
+      </div>
+      <p class="text-[11px] text-slate-400">Data & File PDF tersimpan secara aman di peramban (IndexedDB lokal Anda).</p>
+    </div>
+  </footer>
+
+
+  <!-- ============================================================== -->
+  <!-- MODAL 1: TAMBAH / EDIT BUKU (DENGAN UPLOAD FILE PDF) -->
+  <!-- ============================================================== -->
+  <div id="modal-book" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 my-8 animate-scale-in">
+      
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+            <i data-lucide="book-plus" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 id="modal-book-title" class="text-lg font-bold font-serif text-slate-900">Tambah Buku ke Rak</h3>
+            <p class="text-xs text-slate-500">Masukkan detail buku beserta file PDF-nya.</p>
+          </div>
+        </div>
+        <button onclick="closeBookModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="bookForm" onsubmit="handleSaveBook(event)" class="space-y-4 text-xs">
+        <input type="hidden" id="book-edit-id" value="" />
+
+        <!-- Judul Buku -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Judul Buku <span class="text-red-500">*</span></label>
+          <input type="text" id="book-title-input" required placeholder="Contoh: Cisco CCNA Complete Guide / Ringkasan Fiqih Sunnah" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800" />
+        </div>
+
+        <!-- Penulis / Pengarang -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Penulis / Pengarang <span class="text-red-500">*</span></label>
+          <input type="text" id="book-author-input" required placeholder="Nama penulis atau institusi" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800" />
+        </div>
+
+        <!-- Kategori (Sesuai Permintaan: Keagamaan & Network Engineer) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Kategori Buku <span class="text-red-500">*</span></label>
+            <select id="book-category-select" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800 bg-white font-medium">
+              <option value="Keagamaan">🕌 Keagamaan</option>
+              <option value="Network Engineer">💻 Network Engineer</option>
+              <option value="Lainnya">📚 Lainnya</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Status Membaca</label>
+            <select id="book-status-select" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800 bg-white font-medium">
+              <option value="Belum Dibaca">Belum Dibaca</option>
+              <option value="Sedang Dibaca">Sedang Dibaca</option>
+              <option value="Selesai">Selesai Dibaca</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Halaman -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Total Halaman</label>
+            <input type="number" id="book-total-pages" min="1" value="100" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Halaman Saat Ini</label>
+            <input type="number" id="book-current-page" min="0" value="0" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800" />
+          </div>
+        </div>
+
+        <!-- Upload File PDF -->
+        <div class="space-y-1.5">
+          <label class="block font-semibold text-slate-700">Berkas File PDF Buku</label>
+          <div class="border-2 border-dashed border-amber-200 hover:border-amber-400 bg-amber-50/40 rounded-2xl p-4 text-center cursor-pointer transition-colors relative" id="pdfDropZone">
+            <input type="file" id="book-pdf-input" accept="application/pdf" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" onchange="handlePdfSelected(event)" />
+            <div id="pdf-upload-info" class="space-y-1">
+              <i data-lucide="file-up" class="w-6 h-6 text-amber-700 mx-auto"></i>
+              <p class="text-slate-700 font-semibold text-xs">Pilih file PDF atau tarik ke sini</p>
+              <p class="text-[11px] text-slate-500">Mendukung file PDF (akan disimpan di database lokal browser)</p>
+            </div>
+            <div id="pdf-selected-badge" class="hidden text-emerald-700 font-medium text-xs flex items-center justify-center gap-2">
+              <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+              <span id="pdf-filename-label">File PDF terpilih</span>
+            </div>
+          </div>
+          <p id="pdf-existing-info" class="text-[11px] text-slate-500 hidden"></p>
+        </div>
+
+        <!-- Catatan Ringkas -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Catatan / Ringkasan Buku (Opsional)</label>
+          <textarea id="book-notes-input" rows="2" placeholder="Catatan penting, topik bahasan, atau target Anda..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800"></textarea>
+        </div>
+
+        <!-- Tombol Aksi -->
+        <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeBookModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium">
+            Batal
+          </button>
+          <button type="submit" id="book-submit-btn" class="px-5 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold flex items-center gap-2 shadow-sm transition-all">
+            <i data-lucide="save" class="w-4 h-4"></i> Simpan Buku
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- MODAL 2: NOTION READING SCHEDULE (TAMBAH / EDIT JADWAL) -->
+  <!-- ============================================================== -->
+  <div id="modal-schedule" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 my-8 animate-scale-in">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-notion-border mb-4">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🗓️</span>
+          <div>
+            <h3 id="modal-sched-title" class="text-base font-bold text-slate-900">Buat Jadwal Baca</h3>
+            <p class="text-[11px] text-notion-muted">Penanda sesi baca ala Notion</p>
+          </div>
+        </div>
+        <button onclick="closeScheduleModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="scheduleForm" onsubmit="handleSaveSchedule(event)" class="space-y-3.5 text-xs">
+        <input type="hidden" id="sched-edit-id" value="" />
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Agenda Sesi / Topik <span class="text-red-500">*</span></label>
+          <input type="text" id="sched-title-input" required placeholder="Contoh: Sesi Pagi - Bab 2 OSPF Routing" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800" />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Pilih Buku Terkait <span class="text-red-500">*</span></label>
+          <select id="sched-book-select" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800 bg-white">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Tanggal Jadwal <span class="text-red-500">*</span></label>
+            <input type="date" id="sched-date-input" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800 bg-white" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Waktu / Jam</label>
+            <input type="time" id="sched-time-input" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800 bg-white" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Target Halaman</label>
+            <input type="text" id="sched-target-pages" placeholder="Misal: Hal 20 - 45" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Kolom Status</label>
+            <select id="sched-status-select" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800 bg-white">
+              <option value="Rencana">📋 Rencana</option>
+              <option value="Sedang Berjalan">📖 Sedang Berjalan</option>
+              <option value="Selesai">✅ Selesai</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Catatan Tambahan</label>
+          <textarea id="sched-notes-input" rows="2" placeholder="Catat poin penting atau pengingat sesi..." class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-notion-border">
+          <button type="button" onclick="closeScheduleModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium">
+            Batal
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold flex items-center gap-2 shadow-sm transition-all">
+            <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Simpan Jadwal
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- MODAL 3: PDF READER & PREVIEW (PEMBACA PDF INTERNAL) -->
+  <!-- ============================================================== -->
+  <div id="modal-pdf-reader" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex flex-col p-2 sm:p-4">
+    <div class="bg-white rounded-2xl flex-1 flex flex-col overflow-hidden shadow-2xl border border-slate-700">
+      
+      <!-- PDF Reader Top Bar -->
+      <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between gap-3 shrink-0">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 rounded-lg bg-red-600/80 text-white flex items-center justify-center shrink-0">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+          </div>
+          <div class="min-w-0">
+            <h4 id="pdf-modal-title" class="text-sm font-bold truncate">Judul Buku</h4>
+            <p id="pdf-modal-author" class="text-[11px] text-slate-400 truncate">Penulis</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Open in new browser tab -->
+          <a id="pdf-open-tab-btn" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Buka Tab Baru</span>
+          </a>
+          <!-- Download PDF -->
+          <a id="pdf-download-btn" href="#" download class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Unduh</span>
+          </a>
+          <!-- Close button -->
+          <button onclick="closePdfReader()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- PDF Frame Viewport -->
+      <div class="flex-1 bg-slate-100 relative">
+        <iframe id="pdf-frame" src="" class="w-full h-full border-0"></iframe>
+        
+        <!-- Loading or fallback message -->
+        <div id="pdf-fallback" class="hidden absolute inset-0 bg-white flex flex-col items-center justify-center p-6 text-center space-y-4">
+          <i data-lucide="alert-circle" class="w-12 h-12 text-amber-600"></i>
+          <h4 class="text-base font-bold text-slate-800">Pratinjau PDF tidak didukung langsung di jendela ini</h4>
+          <p class="text-xs text-slate-500 max-w-sm">Anda dapat membuka file PDF ini di tab baru atau mengunduhnya ke komputer Anda.</p>
+          <a id="pdf-fallback-link" href="#" target="_blank" class="px-5 py-2.5 rounded-xl bg-amber-700 text-white font-semibold text-xs shadow-md">
+            Buka PDF di Tab Baru
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <!-- ============================================================== -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="app.js"></script>
+</body>
+</html>
