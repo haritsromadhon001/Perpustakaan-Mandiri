@@ -309,6 +309,22 @@ class DataRepository {
       if (unSynced.length > 0) {
         console.log(`Mengunggah ${unSynced.length} buku lokal ke Supabase Cloud...`);
         for (const book of unSynced) {
+          let finalPdfUrl = book.pdfUrl || null;
+          let finalPdfFileName = book.pdfFileName || null;
+
+          // Jika ada file PDF tersimpan di memori lokal laptop, otomatis unggah ke Supabase Storage
+          if (!finalPdfUrl && book.pdfBlob) {
+            try {
+              const uploadRes = await this.uploadPdfFile(book.pdfBlob);
+              if (uploadRes) {
+                finalPdfUrl = uploadRes.url;
+                finalPdfFileName = uploadRes.fileName || book.pdfFileName;
+              }
+            } catch (upErr) {
+              console.warn('Gagal upload PDF lokal ke storage cloud:', upErr);
+            }
+          }
+
           const payload = {
             id: book.id,
             title: book.title || 'Tanpa Judul',
@@ -319,13 +335,13 @@ class DataRepository {
             status: book.status || 'Belum Dibaca',
             notes: book.notes || '',
             cover_gradient: book.coverGradient,
-            pdf_url: book.pdfUrl || null,
-            pdf_file_name: book.pdfFileName || null,
+            pdf_url: finalPdfUrl,
+            pdf_file_name: finalPdfFileName,
             created_at: book.createdAt || new Date().toISOString()
           };
           await this.supabase.from('books').upsert([payload]);
         }
-        console.log('✓ Sinkronisasi buku lokal ke Cloud berhasil!');
+        console.log('✓ Sinkronisasi buku lokal dan PDF ke Cloud berhasil!');
       }
     } catch (err) {
       console.warn('Sync local books warning:', err);
@@ -1386,18 +1402,25 @@ async function handleSaveBook(e) {
 
   // Handle PDF upload
   if (pendingPdfFile) {
-    showToast('Mengunggah file PDF ke Cloud Database...', 'info');
-    try {
-      const uploadRes = await dataRepo.uploadPdfFile(pendingPdfFile);
-      if (uploadRes) {
-        pdfUrl = uploadRes.url;
-        pdfFileName = uploadRes.fileName || pendingPdfFile.name;
-        pdfBlob = null;
+    pdfFileName = pendingPdfFile.name;
+    if (dataRepo.mode === 'supabase' && dataRepo.supabase) {
+      showToast('Mengunggah file PDF ke Cloud Database...', 'info');
+      try {
+        const uploadRes = await dataRepo.uploadPdfFile(pendingPdfFile);
+        if (uploadRes) {
+          pdfUrl = uploadRes.url;
+          pdfFileName = uploadRes.fileName || pendingPdfFile.name;
+          pdfBlob = null;
+        }
+      } catch (uploadErr) {
+        console.error(uploadErr);
+        showToast(`Upload gagal: ${uploadErr.message}`, 'error');
+        return;
       }
-    } catch (uploadErr) {
-      console.error(uploadErr);
-      showToast(`Upload gagal: ${uploadErr.message}`, 'error');
-      return;
+    } else {
+      // Mode offline/lokal: simpan PDF ke IndexedDB lokal laptop
+      pdfBlob = pendingPdfFile;
+      pdfUrl = null;
     }
   }
 
@@ -1421,7 +1444,11 @@ async function handleSaveBook(e) {
   try {
     await dataRepo.saveBook(bookData);
     closeBookModal();
-    showToast(`Buku "${title}" berhasil disimpan! Tersinkron di semua perangkat.`, 'success');
+    if (dataRepo.mode === 'supabase') {
+      showToast(`Buku "${title}" berhasil disimpan di Cloud! Tersinkron di semua HP & PC.`, 'success');
+    } else {
+      showToast(`Buku "${title}" tersimpan di memori laptop. Hubungkan "Cloud Sync" di atas agar buku muncul di HP!`, 'warning');
+    }
 
     await loadAndSyncData();
     if (currentView === 'dashboard') {
