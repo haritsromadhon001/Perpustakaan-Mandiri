@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Perpustakaan Mandiri | Ruang Baca & Koleksi Buku Digital</title>
   
+  <!-- Website Favicon & App Icon (Matches Dashboard Color Theme & Bookshelf Artwork) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bookGrad%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23b45309%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2378350f%22/%3E%3C/linearGradient%3E%3ClinearGradient%20id%3D%22goldGrad%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fbbf24%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23d97706%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22url%28%23bookGrad%29%22/%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2260%22%20height%3D%2260%22%20rx%3D%2214%22%20fill%3D%22none%22%20stroke%3D%22%23fef3c7%22%20stroke-width%3D%221.5%22%20stroke-opacity%3D%220.3%22/%3E%3Cpath%20d%3D%22M32%2046%20C26%2042%2016%2042%2012%2044%20L12%2020%20C16%2018%2026%2018%2032%2022%20C38%2018%2048%2018%2052%2020%20L52%2044%20C48%2042%2038%2042%2032%2046%20Z%22%20fill%3D%22%23fffbeb%22/%3E%3Cline%20x1%3D%2217%22%20y1%3D%2226%22%20x2%3D%2227%22%20y2%3D%2228%22%20stroke%3D%22%2392400e%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22/%3E%3Cline%20x1%3D%2217%22%20y1%3D%2232%22%20x2%3D%2227%22%20y2%3D%2234%22%20stroke%3D%22%2392400e%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22/%3E%3Cline%20x1%3D%2217%22%20y1%3D%2238%22%20x2%3D%2224%22%20y2%3D%2239%22%20stroke%3D%22%2392400e%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22/%3E%3Cline%20x1%3D%2237%22%20y1%3D%2228%22%20x2%3D%2247%22%20y2%3D%2226%22%20stroke%3D%22%2392400e%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22/%3E%3Cline%20x1%3D%2237%22%20y1%3D%2234%22%20x2%3D%2247%22%20y2%3D%2232%22%20stroke%3D%22%2392400e%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22/%3E%3Cline%20x1%3D%2240%22%20y1%3D%2239%22%20x2%3D%2247%22%20y2%3D%2238%22%20stroke%3D%22%2392400e%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22/%3E%3Cpath%20d%3D%22M32%2022%20L32%2046%22%20stroke%3D%22%2378350f%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22/%3E%3Cpath%20d%3D%22M30%2018%20L34%2018%20L34%2029%20L32%2027%20L30%2029%20Z%22%20fill%3D%22url%28%23goldGrad%29%22/%3E%3Cpath%20d%3D%22M48%2012%20L49.5%2015.5%20L53%2017%20L49.5%2018.5%20L48%2022%20L46.5%2018.5%20L43%2017%20L46.5%2015.5%20Z%22%20fill%3D%22%23fbbf24%22/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="alternate icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="favicon.svg" />
+  <meta name="theme-color" content="#78350f" />
+  <meta name="application-name" content="Perpustakaan Mandiri" />
+  <meta name="apple-mobile-web-app-title" content="Perpustakaan Mandiri" />
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -65,7 +74,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Custom Styles with Cache Busting -->
-  <link rel="stylesheet" href="style.css?v=2.5.0" />
+  <link rel="stylesheet" href="style.css?v=3.3.2" />
 </head>
 <body class="bg-[#fcfaf7] text-slate-800 antialiased font-sans min-h-screen flex flex-col selection:bg-amber-200 selection:text-amber-900">
 
@@ -75,36 +84,91 @@
       <div class="flex items-center justify-between h-16 gap-2">
         
         <!-- Logo & Branding (Responsive text & icons) -->
-        <div class="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0 flex-1 sm:flex-initial" onclick="navigateTo('landing')">
-          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-600 to-amber-800 flex items-center justify-center text-white shadow-md shadow-amber-700/20 shrink-0">
-            <i data-lucide="book-open-check" class="w-5 h-5"></i>
+        <div class="flex items-center gap-2.5 sm:gap-3 cursor-pointer shrink-0" onclick="navigateTo(currentUser || isGuestMode ? 'dashboard' : 'login')">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-md shadow-amber-800/20 shrink-0 border border-amber-300/40 flex items-center justify-center bg-amber-800">
+            <img src="favicon.svg" alt="Logo Perpustakaan" class="w-full h-full object-cover" />
           </div>
-          <div class="min-w-0 truncate">
-            <h1 class="text-sm sm:text-base md:text-lg font-extrabold tracking-tight text-slate-900 font-serif leading-tight truncate">Perpustakaan Mandiri</h1>
-            <p class="text-[9px] sm:text-[11px] font-medium text-amber-800 tracking-wider uppercase truncate">Personal Digital Bookshelf</p>
+          <div class="min-w-0">
+            <h1 class="text-sm sm:text-base md:text-lg font-extrabold tracking-tight text-slate-900 font-serif leading-tight whitespace-nowrap">Perpustakaan Mandiri</h1>
+            <p class="text-[9px] sm:text-[11px] font-medium text-amber-800 tracking-wider uppercase whitespace-nowrap">Personal Digital Bookshelf</p>
           </div>
         </div>
 
         <!-- Navigation Links (Desktop) -->
         <nav class="hidden md:flex items-center gap-1 bg-amber-50/70 p-1 rounded-xl border border-amber-200/50">
-          <button id="nav-btn-landing" onclick="navigateTo('landing')" class="nav-tab active px-4 py-2 rounded-lg text-sm font-semibold text-amber-900 bg-white shadow-xs transition-all flex items-center gap-2">
-            <i data-lucide="compass" class="w-4 h-4 text-amber-600"></i>
-            Beranda
-          </button>
-          <button id="nav-btn-dashboard" onclick="navigateTo('dashboard')" class="nav-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-amber-900 hover:bg-white/60 transition-all flex items-center gap-2">
+          <button id="nav-btn-dashboard" onclick="navigateTo('dashboard')" class="nav-tab active px-3.5 py-2 rounded-lg text-sm font-semibold text-amber-900 bg-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
             <i data-lucide="layout-grid" class="w-4 h-4 text-amber-600"></i>
-            Rak Buku & Dashboard
+            Rak Buku
           </button>
-          <button id="nav-btn-schedule" onclick="navigateTo('schedule')" class="nav-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-amber-900 hover:bg-white/60 transition-all flex items-center gap-2">
+          <button id="nav-btn-schedule" onclick="navigateTo('schedule')" class="nav-tab px-3.5 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-amber-900 hover:bg-white/60 transition-all flex items-center gap-1.5 cursor-pointer">
             <i data-lucide="calendar-check" class="w-4 h-4 text-amber-600"></i>
             Jadwal Baca
             <span id="badge-active-schedules" class="bg-amber-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">0</span>
+          </button>
+          <button id="nav-btn-evaluation" onclick="navigateTo('evaluation')" class="nav-tab px-3.5 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-amber-900 hover:bg-white/60 transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-600"></i>
+            Evaluasi & Inspirasi
           </button>
         </nav>
 
         <!-- Right Quick Actions -->
         <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
           
+          <!-- Pengatur Tema Warna Enak di Mata (Eye Comfort Theme Switcher) -->
+          <div class="relative" id="themeSwitcherContainer">
+            <button onclick="toggleThemeDropdown()" id="themeBtn" class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" title="Ubah Tema Warna Nyaman di Mata">
+              <i data-lucide="palette" class="w-4 h-4 text-amber-700"></i>
+              <span class="hidden lg:inline text-xs font-bold" id="currentThemeLabel">Tema: Krem</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-amber-700"></i>
+            </button>
+            <div id="themeDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 text-xs animate-scale-in">
+              <div class="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 flex items-center justify-between">
+                <span>Warna Nyaman di Mata</span>
+                <i data-lucide="eye" class="w-3 h-3 text-amber-600"></i>
+              </div>
+              <button onclick="switchTheme('parchment')" class="w-full text-left px-3.5 py-2.5 hover:bg-amber-50 flex items-center justify-between font-medium text-slate-800 cursor-pointer">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-4 h-4 rounded-full bg-[#fcf9f2] border-2 border-amber-500 shadow-2xs"></span>
+                  <div>
+                    <p class="font-bold text-xs text-slate-900">Krem Kertas</p>
+                    <p class="text-[10px] text-slate-500">Hangat alami seperti buku</p>
+                  </div>
+                </div>
+                <span class="theme-check-icon text-amber-700 font-bold" data-theme-check="parchment">✓</span>
+              </button>
+              <button onclick="switchTheme('sage')" class="w-full text-left px-3.5 py-2.5 hover:bg-emerald-50 flex items-center justify-between font-medium text-slate-800 cursor-pointer">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-4 h-4 rounded-full bg-[#f2f7f3] border-2 border-emerald-500 shadow-2xs"></span>
+                  <div>
+                    <p class="font-bold text-xs text-slate-900">Hijau Sage</p>
+                    <p class="text-[10px] text-slate-500">Teduh & cegah lelah mata</p>
+                  </div>
+                </div>
+                <span class="theme-check-icon text-emerald-700 font-bold hidden" data-theme-check="sage">✓</span>
+              </button>
+              <button onclick="switchTheme('mocha')" class="w-full text-left px-3.5 py-2.5 hover:bg-amber-50 flex items-center justify-between font-medium text-slate-800 cursor-pointer">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-4 h-4 rounded-full bg-[#f8f3ec] border-2 border-amber-700 shadow-2xs"></span>
+                  <div>
+                    <p class="font-bold text-xs text-slate-900">Kopi Hangat</p>
+                    <p class="text-[10px] text-slate-500">Nuansa sepia klasik</p>
+                  </div>
+                </div>
+                <span class="theme-check-icon text-amber-800 font-bold hidden" data-theme-check="mocha">✓</span>
+              </button>
+              <button onclick="switchTheme('dark')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-100 flex items-center justify-between font-medium text-slate-800 cursor-pointer">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-4 h-4 rounded-full bg-[#14171d] border-2 border-slate-500 shadow-2xs"></span>
+                  <div>
+                    <p class="font-bold text-xs text-slate-900">Malam Teduh</p>
+                    <p class="text-[10px] text-slate-500">OLED gelap nyaman malam</p>
+                  </div>
+                </div>
+                <span class="theme-check-icon text-slate-900 font-bold hidden" data-theme-check="dark">✓</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Tombol Tambah Buku PDF (Always Visible, Compact on Mobile) -->
           <button onclick="openAddBookModal()" class="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs sm:text-sm font-semibold shadow-xs flex items-center gap-1.5 shrink-0 active:scale-95 transition-all" title="Tambah Koleksi PDF Baru">
             <i data-lucide="plus" class="w-4 h-4"></i>
@@ -114,35 +178,39 @@
 
           <!-- Desktop Quick Actions (hidden on mobile < sm) -->
           <div class="hidden sm:flex items-center gap-2">
-            <!-- Status & Pengaturan Database Cloud Supabase -->
-            <button onclick="openCloudConfigModal()" id="cloudStatusBtn" class="px-2.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shadow-2xs" title="Pengaturan Database Cloud (Supabase)">
-              <span id="cloudStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-              <span id="cloudStatusText" class="hidden md:inline">Cloud Database</span>
-            </button>
-
-            <!-- Tombol Akses HP -->
-            <button onclick="openMobileSyncModal()" id="desktopMobileSyncBtn" class="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 active:scale-95 shadow-2xs" title="Buka di HP & QR Code">
-              <i data-lucide="smartphone" class="w-4 h-4 text-amber-700"></i>
-              <span class="hidden sm:inline">Buka di HP</span>
-            </button>
-
-            <!-- Export/Import Data Menu Dropdown Button -->
-            <div class="relative">
-              <button onclick="toggleDataMenu()" id="dataMenuBtn" class="p-2 rounded-xl text-slate-600 hover:bg-amber-100/60 border border-transparent hover:border-amber-200 transition-all" title="Cadangan Data">
-                <i data-lucide="database" class="w-5 h-5 text-slate-600"></i>
+            <!-- Google Auth Profile / Button (Desktop) -->
+            <div class="relative" id="desktopAuthContainer">
+              <!-- Logged Out Button -->
+              <button onclick="navigateTo('login')" id="desktopLoginBtn" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shadow-2xs group cursor-pointer" title="Masuk Akun">
+                <i data-lucide="user" class="w-4 h-4 text-amber-700"></i>
+                <span class="hidden md:inline">Masuk Akun</span>
+                <span class="inline md:hidden">Akun</span>
               </button>
-              <div id="dataMenuDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 text-xs">
-                <div class="px-3 py-2 border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Penyimpanan Data</div>
-                <button onclick="exportLibraryData()" class="w-full text-left px-4 py-2 text-slate-700 hover:bg-amber-50 flex items-center gap-2 font-medium">
-                  <i data-lucide="download" class="w-4 h-4 text-amber-600"></i> Cadangkan Data (Backup)
+
+              <!-- Logged In User Pill with Dropdown -->
+              <div id="desktopUserPill" class="hidden relative">
+                <button onclick="toggleUserDropdown()" id="desktopUserBtn" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-amber-50/70 border border-amber-200/80 text-xs font-semibold transition-all flex items-center gap-2 shadow-2xs cursor-pointer">
+                  <img id="desktopUserAvatar" src="" alt="Avatar" class="w-6 h-6 rounded-full border border-amber-400 object-cover bg-amber-100" />
+                  <span id="desktopUserName" class="max-w-[100px] truncate text-slate-800">User</span>
+                  <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
                 </button>
-                <label class="w-full text-left px-4 py-2 text-slate-700 hover:bg-amber-50 flex items-center gap-2 font-medium cursor-pointer">
-                  <i data-lucide="upload" class="w-4 h-4 text-amber-600"></i> Pulihkan Data (Restore)
-                  <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importLibraryData(event)" />
-                </label>
-                <button onclick="confirmResetData()" class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium">
-                  <i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i> Kosongkan Semua Data
-                </button>
+                <div id="desktopUserDropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 text-xs">
+                  <div class="px-3.5 py-2 border-b border-slate-100">
+                    <p class="font-bold text-slate-900 truncate" id="dropdownUserFullName">Nama Pengguna</p>
+                    <p class="text-[11px] text-slate-500 truncate" id="dropdownUserEmail">email@gmail.com</p>
+                    <span class="inline-flex items-center gap-1 mt-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200">
+                      <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i> Akun Google Terhubung
+                    </span>
+                  </div>
+                  <div class="py-1">
+                    <button onclick="navigateTo('login'); toggleUserDropdown();" class="w-full text-left px-3.5 py-2 hover:bg-amber-50 flex items-center gap-2 font-medium text-slate-700">
+                      <i data-lucide="user" class="w-4 h-4 text-amber-700"></i> Detail Profil & Sinkron
+                    </button>
+                    <button onclick="signOutUser(); toggleUserDropdown();" class="w-full text-left px-3.5 py-2 hover:bg-red-50 flex items-center gap-2 font-medium text-red-600">
+                      <i data-lucide="log-out" class="w-4 h-4 text-red-500"></i> Keluar dari Akun (Logout)
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -154,27 +222,62 @@
               <span id="mobileMenuCloudDot" class="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
             </button>
             <div id="mobileActionDropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 text-xs">
-              <div class="px-3 py-1.5 text-slate-400 font-semibold uppercase tracking-wider text-[10px] border-b border-slate-100">
-                Opsi & Sinkronisasi
-              </div>
               
-              <!-- Supabase Cloud Status -->
-              <button onclick="openCloudConfigModal(); toggleMobileActionMenu();" class="w-full text-left px-3.5 py-2.5 hover:bg-amber-50 flex items-center justify-between text-slate-700">
-                <span class="flex items-center gap-2 font-medium">
-                  <i data-lucide="cloud" class="w-4 h-4 text-amber-700"></i> Database Cloud
-                </span>
-                <span id="mobileCloudBadge" class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">
-                  <span id="mobileCloudStatusDot" class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                  <span id="mobileCloudStatusText">Offline</span>
-                </span>
-              </button>
+              <!-- Auth Item Mobile -->
+              <div id="mobileAuthSection" class="px-3 py-2 border-b border-slate-100">
+                <!-- Logged Out State -->
+                <div id="mobileLoggedOutContainer">
+                  <button onclick="navigateTo('login'); toggleMobileActionMenu();" class="w-full px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-semibold flex items-center justify-between transition-all">
+                    <span class="flex items-center gap-2">
+                      <i data-lucide="user" class="w-4 h-4 text-amber-700"></i>
+                      Masuk Akun
+                    </span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                  </button>
+                </div>
+                <!-- Logged In State -->
+                <div id="mobileLoggedInContainer" class="hidden space-y-2">
+                  <div class="flex items-center gap-2.5">
+                    <img id="mobileUserAvatar" src="" class="w-8 h-8 rounded-full border border-amber-400 object-cover bg-amber-100" />
+                    <div class="min-w-0 flex-1">
+                      <p id="mobileUserName" class="font-bold text-slate-900 truncate">Nama User</p>
+                      <p id="mobileUserEmail" class="text-[10px] text-slate-500 truncate">email@gmail.com</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1.5 pt-1">
+                    <button onclick="navigateTo('login'); toggleMobileActionMenu();" class="flex-1 py-1 px-2 rounded-lg bg-amber-50 text-amber-900 font-semibold text-center text-[11px] border border-amber-200">
+                      Profil
+                    </button>
+                    <button onclick="signOutUser(); toggleMobileActionMenu();" class="py-1 px-2 rounded-lg bg-red-50 text-red-600 font-semibold text-center text-[11px] border border-red-200">
+                      Keluar
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-              <!-- Buka di HP / QR Sync -->
-              <button onclick="openMobileSyncModal(); toggleMobileActionMenu();" class="w-full text-left px-3.5 py-2.5 hover:bg-amber-50 flex items-center gap-2 text-slate-700 font-medium">
-                <i data-lucide="smartphone" class="w-4 h-4 text-amber-700"></i> Buka di HP / QR Sync
-              </button>
+              <!-- Tema Enak di Mata Mobile -->
+              <div class="px-3 py-1.5 text-slate-400 font-semibold uppercase tracking-wider text-[10px] border-b border-slate-100 flex items-center justify-between">
+                <span>Tema Enak di Mata</span>
+                <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-700"></i>
+              </div>
+              <div class="p-2 grid grid-cols-2 gap-1.5 border-b border-slate-100">
+                <button onclick="switchTheme('parchment'); toggleMobileActionMenu();" class="p-2 rounded-xl border border-amber-200 bg-[#fcf9f2] text-[11px] font-bold text-amber-900 text-left flex items-center gap-1.5 cursor-pointer">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span> Krem
+                </button>
+                <button onclick="switchTheme('sage'); toggleMobileActionMenu();" class="p-2 rounded-xl border border-emerald-200 bg-[#f2f7f3] text-[11px] font-bold text-emerald-900 text-left flex items-center gap-1.5 cursor-pointer">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> Sage
+                </button>
+                <button onclick="switchTheme('mocha'); toggleMobileActionMenu();" class="p-2 rounded-xl border border-amber-300 bg-[#f8f3ec] text-[11px] font-bold text-amber-900 text-left flex items-center gap-1.5 cursor-pointer">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-800"></span> Kopi
+                </button>
+                <button onclick="switchTheme('dark'); toggleMobileActionMenu();" class="p-2 rounded-xl border border-slate-700 bg-[#14171d] text-[11px] font-bold text-white text-left flex items-center gap-1.5 cursor-pointer">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Gelap
+                </button>
+              </div>
 
-              <div class="my-1 border-t border-slate-100"></div>
+              <div class="px-3 py-1.5 text-slate-400 font-semibold uppercase tracking-wider text-[10px] border-b border-slate-100">
+                Penyimpanan Data
+              </div>
 
               <!-- Cadangkan Data -->
               <button onclick="exportLibraryData(); toggleMobileActionMenu();" class="w-full text-left px-3.5 py-2 hover:bg-amber-50 flex items-center gap-2 text-slate-700 font-medium">
@@ -206,7 +309,7 @@
     <!-- ============================================================== -->
     <!-- VIEW 1: LANDING PAGE -->
     <!-- ============================================================== -->
-    <section id="view-landing" class="view-panel space-y-12">
+    <section id="view-landing" class="view-panel hidden space-y-12">
       
       <!-- Hero Section -->
       <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-900 via-amber-800 to-stone-900 text-white p-8 sm:p-12 md:p-16 shadow-2xl shadow-amber-950/20">
@@ -231,17 +334,21 @@
           </p>
 
           <div class="flex flex-wrap items-center gap-3 pt-2">
-            <button onclick="navigateTo('dashboard')" class="px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-sm shadow-lg shadow-amber-500/25 transition-all flex items-center gap-2 active:scale-95">
+            <button onclick="navigateTo('dashboard')" class="px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-sm shadow-lg shadow-amber-500/25 transition-all flex items-center gap-2 active:scale-95 cursor-pointer">
               <i data-lucide="book-marked" class="w-4 h-4"></i>
               Buka Rak Buku Sekarang
             </button>
-            <button onclick="navigateTo('schedule')" class="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-sm backdrop-blur-md transition-all flex items-center gap-2">
+            <button onclick="navigateTo('schedule')" class="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-sm backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer">
               <i data-lucide="calendar" class="w-4 h-4"></i>
               Lihat Jadwal Baca
             </button>
-            <button onclick="openAddBookModal()" class="px-4 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-amber-200 border border-white/10 text-sm transition-all flex items-center gap-2">
+            <button onclick="openAddBookModal()" class="px-4 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-amber-200 border border-white/10 text-sm transition-all flex items-center gap-2 cursor-pointer">
               <i data-lucide="file-up" class="w-4 h-4"></i>
               Unggah PDF
+            </button>
+            <button onclick="navigateTo('login')" class="px-4 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-amber-100 border border-white/20 font-semibold text-sm backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer">
+              <i data-lucide="user" class="w-4 h-4 text-amber-300"></i>
+              <span>Masuk Akun</span>
             </button>
           </div>
         </div>
@@ -341,8 +448,13 @@
       <div class="space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 class="text-2xl sm:text-3xl font-extrabold font-serif text-slate-900 tracking-tight">Rak Buku & Dashboard</h2>
-            <p class="text-sm text-slate-500">Kelola koleksi buku fisik & digital Anda di satu rak yang rapi.</p>
+            <div class="flex items-center gap-2.5">
+              <h2 id="dashboardHeadingTitle" class="text-2xl sm:text-3xl font-extrabold font-serif text-slate-900 tracking-tight">Rak Buku & Dashboard</h2>
+              <span id="dashboardUserBadge" class="hidden text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                <i data-lucide="user" class="w-3 h-3 inline mr-1"></i><span id="dashboardUserBadgeName">Akun</span>
+              </span>
+            </div>
+            <p id="dashboardSubHeading" class="text-sm text-slate-500">Kelola koleksi buku fisik & digital Anda di satu rak yang rapi.</p>
           </div>
           <div class="flex items-center gap-2">
             <button onclick="openAddBookModal()" class="px-4 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-sm shadow-sm flex items-center gap-2 transition-all">
@@ -403,46 +515,151 @@
         </div>
       </div>
 
+      <!-- ============================================================== -->
+      <!-- EVALUASI & REFLEKSI PEMBACA CARD -->
+      <!-- ============================================================== -->
+      <div class="bg-gradient-to-r from-amber-500/10 via-amber-600/5 to-emerald-500/10 rounded-3xl p-5 sm:p-6 border border-amber-200/80 shadow-xs relative overflow-hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
+          <div class="space-y-2 max-w-xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-700"></i>
+              <span>Evaluasi & Refleksi untuk Anda sebagai Pembaca</span>
+            </div>
+            <h3 class="text-lg sm:text-xl font-bold font-serif text-slate-900" id="readerEvaluationHeadline">
+              Kemajuan Membaca: 0% Selesai
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed" id="readerEvaluationReflection">
+              "Pendidikan adalah senjata paling ampuh yang dapat kamu gunakan untuk mengubah dunia." — Bangun sistem kebiasaan membaca sedikit demi sedikit setiap hari untuk mencapai target Anda.
+            </p>
+          </div>
+
+          <!-- Progress Ring & Quick Stats -->
+          <div class="flex items-center gap-4 bg-white p-4 rounded-2xl border border-amber-200/60 shadow-xs shrink-0">
+            <div class="text-center px-2">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Selesai</p>
+              <p class="text-2xl font-black text-emerald-700" id="evalCountDone">0</p>
+              <p class="text-[10px] text-slate-400">Buku</p>
+            </div>
+            <div class="h-10 w-px bg-slate-200"></div>
+            <div class="text-center px-2">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Belum Dibaca</p>
+              <p class="text-2xl font-black text-amber-700" id="evalCountUnread">0</p>
+              <p class="text-[10px] text-slate-400">Buku</p>
+            </div>
+            <div class="h-10 w-px bg-slate-200"></div>
+            <div class="text-center px-2">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tuntas</p>
+              <p class="text-2xl font-black text-sky-700" id="evalPercentRatio">0%</p>
+              <p class="text-[10px] text-slate-400">Rasio</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Segmented Status Tabs: Semua, Belum Dibaca, Sudah Dibaca & Layout Switcher -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-bold text-slate-500 mr-1 hidden sm:inline">Status Baca:</span>
+          <button onclick="filterReadingStatus('all')" id="status-pill-all" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-700 text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+            <span>Semua Buku</span>
+            <span id="badge-count-all" class="ml-1 px-1.5 py-0.5 rounded-full bg-white/20 text-[10px]">0</span>
+          </button>
+          <button onclick="filterReadingStatus('unread')" id="status-pill-unread" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-amber-900 hover:bg-amber-50 border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-600"></i>
+            <span>Belum Selesai Dibaca</span>
+            <span id="badge-count-unread" class="ml-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold text-[10px]">0</span>
+          </button>
+          <button onclick="filterReadingStatus('completed')" id="status-pill-completed" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-emerald-900 hover:bg-emerald-50 border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-600"></i>
+            <span>Sudah Selesai Dibaca</span>
+            <span id="badge-count-completed" class="ml-1 px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold text-[10px]">0</span>
+          </button>
+        </div>
+
+        <!-- View Mode: Grid vs Dual Column -->
+        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shrink-0">
+          <button onclick="toggleBookshelfLayout('grid')" id="layout-grid-btn" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-slate-800 shadow-2xs flex items-center gap-1 cursor-pointer">
+            <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-amber-700"></i>
+            <span>Rak Grid</span>
+          </button>
+          <button onclick="toggleBookshelfLayout('dual')" id="layout-dual-btn" class="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer">
+            <i data-lucide="columns-2" class="w-3.5 h-3.5 text-slate-600"></i>
+            <span>Dua Kolom (Belum vs Sudah)</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Filter, Search, and Category Tab Bar -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         
         <!-- Category Segmented Control Buttons -->
         <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-          <button onclick="filterCategory('all')" id="tab-cat-all" class="cat-pill active px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap bg-amber-700 text-white">
+          <button onclick="filterCategory('all')" id="tab-cat-all" class="cat-pill active px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap bg-amber-700 text-white cursor-pointer">
             <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Semua (<span id="count-cat-all">0</span>)
           </button>
-          <button onclick="filterCategory('Keagamaan')" id="tab-cat-keagamaan" class="cat-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
+          <button onclick="filterCategory('Keagamaan')" id="tab-cat-keagamaan" class="cat-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
             <i data-lucide="book-heart" class="w-3.5 h-3.5 text-emerald-600"></i> Keagamaan (<span id="count-cat-keagamaan">0</span>)
           </button>
-          <button onclick="filterCategory('Network Engineer')" id="tab-cat-network" class="cat-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
+          <button onclick="filterCategory('Network Engineer')" id="tab-cat-network" class="cat-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
             <i data-lucide="server" class="w-3.5 h-3.5 text-sky-600"></i> Network Engineer (<span id="count-cat-network">0</span>)
           </button>
-          <button onclick="filterCategory('Lainnya')" id="tab-cat-lainnya" class="cat-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
+          <button onclick="filterCategory('Lainnya')" id="tab-cat-lainnya" class="cat-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
             <i data-lucide="bookmark" class="w-3.5 h-3.5 text-slate-500"></i> Lainnya (<span id="count-cat-lainnya">0</span>)
           </button>
         </div>
 
-        <!-- Search & Filter Controls -->
-        <div class="flex items-center gap-2">
-          <!-- Search Input -->
-          <div class="relative flex-1 sm:w-64">
-            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-            <input type="text" id="bookSearchInput" oninput="handleBookSearch()" placeholder="Cari judul, penulis..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-all" />
-          </div>
-
-          <!-- Status Filter -->
-          <select id="statusFilterSelect" onchange="handleBookSearch()" class="py-1.5 px-3 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 bg-white font-medium text-slate-700">
-            <option value="all">Semua Status</option>
-            <option value="Belum Dibaca">Belum Dibaca</option>
-            <option value="Sedang Dibaca">Sedang Dibaca</option>
-            <option value="Selesai">Selesai</option>
-          </select>
+        <!-- Search Input -->
+        <div class="relative flex-1 sm:w-64">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+          <input type="text" id="bookSearchInput" oninput="handleBookSearch()" placeholder="Cari judul, penulis..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-all" />
         </div>
       </div>
 
-      <!-- Books Grid (The Bookshelf) -->
+      <!-- Books Grid (The Bookshelf - Grid View) -->
       <div id="bookshelf-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <!-- Rendered dynamically via JS -->
+      </div>
+
+      <!-- Dua Kolom Layout Container (Dual List: Belum Dibaca vs Sudah Selesai Dibaca) -->
+      <div id="bookshelf-dual-container" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Kolom 1: Belum Dibaca / Sedang Berjalan -->
+        <div class="bg-amber-50/40 rounded-3xl p-5 border border-amber-200/70 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-amber-200/60">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
+                <i data-lucide="book-open" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <h4 class="font-bold text-sm text-slate-900">Belum Selesai Dibaca</h4>
+                <p class="text-[11px] text-slate-500">Buku dalam antrean & sedang dipelajari</p>
+              </div>
+            </div>
+            <span id="dual-count-unread" class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">0</span>
+          </div>
+          <div id="dual-unread-list" class="space-y-3">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Kolom 2: Sudah Selesai Dibaca -->
+        <div class="bg-emerald-50/40 rounded-3xl p-5 border border-emerald-200/70 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-emerald-200/60">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <h4 class="font-bold text-sm text-slate-900">Sudah Selesai Dibaca</h4>
+                <p class="text-[11px] text-slate-500">Koleksi buku yang telah tuntas Anda baca</p>
+              </div>
+            </div>
+            <span id="dual-count-completed" class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900">0</span>
+          </div>
+          <div id="dual-completed-list" class="space-y-3">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
       </div>
 
       <!-- Empty State Container -->
@@ -452,9 +669,243 @@
         </div>
         <h3 class="text-lg font-bold font-serif text-slate-900 mb-1">Rak Masih Kosong</h3>
         <p class="text-xs text-slate-500 mb-6">Belum ada buku yang sesuai dengan pencarian atau filter yang dipilih. Ayo tambahkan buku PDF pertama Anda!</p>
-        <button onclick="openAddBookModal()" class="px-5 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xs shadow-md transition-all inline-flex items-center gap-2">
+        <button onclick="openAddBookModal()" class="px-5 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xs shadow-md transition-all inline-flex items-center gap-2 cursor-pointer">
           <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Buku PDF Sekarang
         </button>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- 5 KATA-KATA BIJAK & MAKNANYA UNTUK PEMBACA -->
+      <!-- ============================================================== -->
+      <div class="pt-8 pb-4 border-t border-amber-200/60 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold mb-1">
+              <i data-lucide="quote" class="w-3.5 h-3.5 text-amber-700"></i>
+              <span>Refleksi & Inspirasi Pembaca</span>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-bold font-serif text-slate-900">
+              5 Kata-Kata Mutiara & Maknanya
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-500">
+              Pedoman inspiratif tentang ilmu, ketekunan, dan sistem kebiasaan bagi Anda sebagai pembaca.
+            </p>
+          </div>
+          <button onclick="navigateTo('evaluation')" class="text-xs sm:text-sm font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1.5 cursor-pointer self-start sm:self-auto">
+            <span>Buka Halaman Evaluasi Penuh</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- 5 Quotes Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          
+          <!-- 1. Nelson Mandela -->
+          <div class="quote-card bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl bg-amber-800 text-white font-bold flex items-center justify-center text-xs shadow-xs">
+                    NM
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-sm text-slate-900">Nelson Mandela</h4>
+                    <p class="text-[10px] text-slate-500">Tokoh Kemanusiaan & Perdamaian</p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">1</span>
+              </div>
+              <blockquote class="text-sm font-serif italic text-slate-800 leading-relaxed bg-amber-50/50 p-3.5 rounded-2xl border border-amber-100">
+                “Pendidikan adalah senjata paling ampuh yang dapat kamu gunakan untuk mengubah dunia.”
+              </blockquote>
+            </div>
+            <div class="pt-2 border-t border-slate-100 space-y-2">
+              <p class="text-xs text-slate-600 leading-relaxed">
+                <strong class="text-amber-900 font-bold">Makna:</strong> Ilmu dapat menjadi bekal untuk mengubah kehidupan dan memberikan manfaat kepada orang lain.
+              </p>
+              <button onclick="copyQuoteText('Pendidikan adalah senjata paling ampuh yang dapat kamu gunakan untuk mengubah dunia. — Nelson Mandela')" class="text-[11px] font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3 h-3"></i> Salin Kutipan
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Benjamin Franklin -->
+          <div class="quote-card bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl bg-emerald-800 text-white font-bold flex items-center justify-center text-xs shadow-xs">
+                    BF
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-sm text-slate-900">Benjamin Franklin</h4>
+                    <p class="text-[10px] text-slate-500">Polimatik & Negarawan</p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900">2</span>
+              </div>
+              <blockquote class="text-sm font-serif italic text-slate-800 leading-relaxed bg-emerald-50/40 p-3.5 rounded-2xl border border-emerald-100">
+                “Investasi dalam pengetahuan memberikan bunga terbaik.”
+              </blockquote>
+            </div>
+            <div class="pt-2 border-t border-slate-100 space-y-2">
+              <p class="text-xs text-slate-600 leading-relaxed">
+                <strong class="text-emerald-900 font-bold">Makna:</strong> Waktu dan usaha yang kamu gunakan untuk belajar dapat memberikan manfaat dalam jangka panjang.
+              </p>
+              <button onclick="copyQuoteText('Investasi dalam pengetahuan memberikan bunga terbaik. — Benjamin Franklin')" class="text-[11px] font-semibold text-emerald-800 hover:text-emerald-900 flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3 h-3"></i> Salin Kutipan
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. Calvin Coolidge -->
+          <div class="quote-card bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl bg-sky-800 text-white font-bold flex items-center justify-center text-xs shadow-xs">
+                    CC
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-sm text-slate-900">Calvin Coolidge</h4>
+                    <p class="text-[10px] text-slate-500">Presiden Amerika Serikat ke-30</p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-900">3</span>
+              </div>
+              <blockquote class="text-sm font-serif italic text-slate-800 leading-relaxed bg-sky-50/40 p-3.5 rounded-2xl border border-sky-100">
+                “Nothing in this world can take the place of persistence.”
+              </blockquote>
+            </div>
+            <div class="pt-2 border-t border-slate-100 space-y-2">
+              <p class="text-xs text-slate-600 leading-relaxed">
+                <strong class="text-sky-900 font-bold">Artinya:</strong> Tidak ada sesuatu di dunia ini yang dapat menggantikan ketekunan.
+              </p>
+              <button onclick="copyQuoteText('Nothing in this world can take the place of persistence. — Calvin Coolidge')" class="text-[11px] font-semibold text-sky-800 hover:text-sky-900 flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3 h-3"></i> Salin Kutipan
+              </button>
+            </div>
+          </div>
+
+          <!-- 4. Michael Jordan -->
+          <div class="quote-card bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl bg-rose-800 text-white font-bold flex items-center justify-center text-xs shadow-xs">
+                    MJ
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-sm text-slate-900">Michael Jordan</h4>
+                    <p class="text-[10px] text-slate-500">Legenda Basket Dunia</p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-900">4</span>
+              </div>
+              <blockquote class="text-sm font-serif italic text-slate-800 leading-relaxed bg-rose-50/40 p-3.5 rounded-2xl border border-rose-100">
+                “I've failed over and over and over again in my life. And that is why I succeed.”
+              </blockquote>
+            </div>
+            <div class="pt-2 border-t border-slate-100 space-y-2">
+              <p class="text-xs text-slate-600 leading-relaxed">
+                <strong class="text-rose-900 font-bold">Artinya:</strong> Saya telah gagal berulang kali dalam hidup saya. Itulah sebabnya saya berhasil.
+              </p>
+              <button onclick="copyQuoteText('I\'ve failed over and over and over again in my life. And that is why I succeed. — Michael Jordan')" class="text-[11px] font-semibold text-rose-800 hover:text-rose-900 flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3 h-3"></i> Salin Kutipan
+              </button>
+            </div>
+          </div>
+
+          <!-- 5. James Clear -->
+          <div class="quote-card bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs flex flex-col justify-between space-y-4 md:col-span-2 lg:col-span-1">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl bg-purple-800 text-white font-bold flex items-center justify-center text-xs shadow-xs">
+                    JC
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-sm text-slate-900">James Clear</h4>
+                    <p class="text-[10px] text-slate-500">Penulis Buku Atomic Habits</p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-900">5</span>
+              </div>
+              <blockquote class="text-sm font-serif italic text-slate-800 leading-relaxed bg-purple-50/40 p-3.5 rounded-2xl border border-purple-100">
+                “You do not rise to the level of your goals. You fall to the level of your systems.”
+              </blockquote>
+            </div>
+            <div class="pt-2 border-t border-slate-100 space-y-2">
+              <p class="text-xs text-slate-600 leading-relaxed">
+                <strong class="text-purple-900 font-bold">Artinya:</strong> Kamu tidak selalu mencapai tingkat tujuanmu; kamu cenderung kembali pada tingkat sistem atau kebiasaan yang telah kamu bangun.
+              </p>
+              <button onclick="copyQuoteText('You do not rise to the level of your goals. You fall to the level of your systems. — James Clear')" class="text-[11px] font-semibold text-purple-800 hover:text-purple-900 flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3 h-3"></i> Salin Kutipan
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 2B: EVALUASI & MOTIVASI PEMBACA (DEDICATED FULL VIEW) -->
+    <!-- ============================================================== -->
+    <section id="view-evaluation" class="view-panel hidden space-y-8">
+      
+      <!-- Header Evaluasi -->
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-amber-200/70 shadow-xs space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+            <i data-lucide="sparkles" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold font-serif text-slate-900">Evaluasi Pembaca & Motivasi</h2>
+            <p class="text-xs sm:text-sm text-slate-500">Refleksi kebiasaan membaca, target halaman, dan kutipan inspiratif harian Anda.</p>
+          </div>
+        </div>
+
+        <!-- 3 Kartu Metrik Evaluasi -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3">
+          <div class="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/80">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Persentase Selesai</p>
+            <h4 class="text-2xl font-black text-amber-900 mt-1" id="evalFullPercent">0%</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5" id="evalFullRatioText">0 dari 0 buku telah selesai dibaca</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/80">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Lembar Dibaca</p>
+            <h4 class="text-2xl font-black text-emerald-900 mt-1" id="evalFullPages">0</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Halaman buku yang telah dipelajari</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-sky-50/50 border border-sky-200/80">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Indeks Disiplin Sistem</p>
+            <h4 class="text-2xl font-black text-sky-900 mt-1" id="evalFullDiscipline">Sedang Dibangun</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Berdasarkan kebiasaan membaca harian</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Evaluasi Diri & Analisis Kebiasaan -->
+      <div class="bg-amber-50/40 rounded-3xl p-6 sm:p-8 border border-amber-200/70 space-y-4">
+        <h3 class="text-lg font-bold font-serif text-slate-900 flex items-center gap-2">
+          <i data-lucide="award" class="w-5 h-5 text-amber-700"></i>
+          Catatan & Refleksi Evaluasi Diri
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed" id="evalFullDescription">
+          Membaca bukan hanya tentang menghabiskan lembaran buku, melainkan membangun sistem yang konsisten setiap hari. Sesuai pesan <strong>James Clear</strong>: <em>“You do not rise to the level of your goals. You fall to the level of your systems.”</em> Fokuslah menyisihkan 15-30 menit setiap hari untuk membuka buku di rak ini.
+        </p>
+      </div>
+
+      <!-- The 5 Quotes Featured in Evaluation View -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-bold font-serif text-slate-900">5 Mutiara Kata untuk Menemani Perjalanan Belajar Anda</h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="quotesFullContainer">
+          <!-- Rendered via JS -->
+        </div>
       </div>
 
     </section>
@@ -579,6 +1030,184 @@
               <!-- Rendered via JS -->
             </tbody>
           </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 4: PORTAL MASUK / LOGIN AKUN GOOGLE -->
+    <!-- ============================================================== -->
+    <!-- ============================================================== -->
+    <!-- VIEW 4: PORTAL MASUK / LOGIN (GATEWAY SEBELUM DASHBOARD) -->
+    <!-- ============================================================== -->
+    <section id="view-login" class="view-panel hidden min-h-[85vh] flex flex-col items-center justify-center max-w-md mx-auto py-6 px-4">
+      
+      <!-- MAIN CARD: PORTAL LOGIN (LOGGED OUT STATE) -->
+      <div id="login-view-logged-out" class="w-full bg-white rounded-3xl p-6 sm:p-9 border border-amber-200/80 shadow-2xl shadow-amber-950/10 relative overflow-hidden">
+        <!-- Ambient background gradient -->
+        <div class="absolute -right-20 -top-20 w-72 h-72 rounded-full bg-amber-500/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-20 -bottom-20 w-72 h-72 rounded-full bg-sky-500/10 blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 max-w-md mx-auto text-center space-y-4">
+          
+          <!-- Portal Emblem Matching Dashboard Logo & Favicon -->
+          <div class="inline-flex items-center gap-2.5 p-1.5 pr-4 rounded-full bg-amber-50/90 border border-amber-200/80 text-xs font-semibold text-amber-900 shadow-2xs">
+            <span class="w-8 h-8 rounded-full bg-amber-800 flex items-center justify-center shadow-xs overflow-hidden border border-amber-300/40">
+              <img src="favicon.svg" alt="Logo" class="w-full h-full object-cover" />
+            </span>
+            <span>Perpustakaan Mandiri</span>
+          </div>
+
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 font-serif leading-tight">
+              Selamat Datang
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+              Silakan masukkan akun Anda untuk mengakses perpustakaan
+            </p>
+          </div>
+
+          <!-- FORM LOGIN PORTAL: NAMA / ACCOUNT + PASSWORD -->
+          <div class="bg-amber-50/30 rounded-2xl p-5 sm:p-6 border border-amber-100/90 text-left space-y-4 shadow-2xs">
+            <form id="form-account-login" onsubmit="handleAccountPasswordLogin(event)" class="space-y-3.5">
+              <!-- 1. Input Nama / Account -->
+              <div>
+                <label for="loginAccountInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <i data-lucide="user" class="w-3.5 h-3.5 text-amber-700"></i>
+                  <span>Nama atau Account</span>
+                </label>
+                <div class="relative">
+                  <input type="text" id="loginAccountInput" placeholder="Ketik nama atau akun Anda (cth: Harits)" required class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm font-medium text-slate-800 bg-white placeholder-slate-400 transition-all shadow-2xs" value="Harits" />
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i data-lucide="user" class="w-4 h-4"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. Input Password -->
+              <div>
+                <label for="loginPasswordInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5">
+                    <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-700"></i>
+                    <span>Password / Kata Sandi</span>
+                  </span>
+                  <span class="text-[10px] font-normal text-slate-400">Ketik kata sandi Anda</span>
+                </label>
+                <div class="relative">
+                  <input type="password" id="loginPasswordInput" placeholder="Masukkan password akun..." class="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm font-medium text-slate-800 bg-white placeholder-slate-400 transition-all shadow-2xs" value="123456" />
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i data-lucide="lock" class="w-4 h-4"></i>
+                  </div>
+                  <button type="button" onclick="toggleLoginPasswordVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer" title="Lihat/Sembunyikan password">
+                    <i id="loginPasswordEyeIcon" data-lucide="eye" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. Tombol Submit: Langsung Buka Dashboard -->
+              <button type="submit" id="btnSubmitLogin" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 active:scale-98 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer mt-1">
+                <i data-lucide="log-in" class="w-4 h-4"></i>
+                <span>Buka & Masuk ke Dashboard</span>
+              </button>
+            </form>
+
+            <!-- 4. Opsi Skip (Boleh Skip, di dashboard TIDAK ADA nama akun) -->
+            <div class="pt-3 text-center border-t border-slate-200/60">
+              <button onclick="skipLoginToDashboard()" id="btnSkipLogin" class="text-xs sm:text-sm font-bold text-slate-600 hover:text-amber-900 transition-colors py-1.5 px-3 rounded-xl hover:bg-amber-100/60 inline-flex items-center gap-1.5 cursor-pointer">
+                <span>Lewati & Masuk tanpa Akun</span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+              </button>
+              <p class="text-[11px] text-slate-400 mt-0.5">
+                (Boleh lewati: masuk langsung, tanpa memunculkan nama akun di dashboard)
+              </p>
+            </div>
+          </div>
+
+          <!-- Feature Highlights Mini -->
+          <div class="grid grid-cols-3 gap-2.5 text-center pt-4 border-t border-slate-100">
+            <div class="p-3 rounded-2xl bg-amber-50/50 border border-amber-100">
+              <i data-lucide="layout-grid" class="w-4 h-4 text-amber-700 mx-auto mb-1"></i>
+              <p class="font-bold text-[11px] text-slate-800">Rak Buku</p>
+              <p class="text-[9px] text-slate-500">PDF Digital</p>
+            </div>
+            <div class="p-3 rounded-2xl bg-sky-50/50 border border-sky-100">
+              <i data-lucide="calendar" class="w-4 h-4 text-sky-700 mx-auto mb-1"></i>
+              <p class="font-bold text-[11px] text-slate-800">Jadwal Baca</p>
+              <p class="text-[9px] text-slate-500">Ala Notion</p>
+            </div>
+            <div class="p-3 rounded-2xl bg-emerald-50/50 border border-emerald-100">
+              <i data-lucide="palette" class="w-4 h-4 text-emerald-700 mx-auto mb-1"></i>
+              <p class="font-bold text-[11px] text-slate-800">Tema Teduh</p>
+              <p class="text-[9px] text-slate-500">Enak di Mata</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- MAIN CARD: LOGGED IN STATE -->
+      <div id="login-view-logged-in" class="hidden w-full max-w-md bg-white rounded-3xl p-6 sm:p-9 border border-amber-200/80 shadow-2xl shadow-amber-950/10 relative overflow-hidden">
+        <div class="relative z-10 max-w-md mx-auto space-y-5">
+          
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Akun Aktif Masuk
+            </div>
+            <button onclick="signOutUser()" class="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Keluar (Logout)
+            </button>
+          </div>
+
+          <!-- Profile Badge -->
+          <div class="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl bg-amber-50/50 border border-amber-200/60 text-center sm:text-left">
+            <img id="loginProfileAvatar" src="" alt="Avatar" class="w-16 h-16 rounded-full border-2 border-amber-500 shadow-md object-cover bg-amber-100" />
+            <div class="space-y-0.5 min-w-0">
+              <h3 id="loginProfileName" class="text-lg font-extrabold text-slate-900 font-serif">Nama Pengguna</h3>
+              <p id="loginProfileEmail" class="text-xs text-slate-600 flex items-center justify-center sm:justify-start gap-1">
+                <i data-lucide="mail" class="w-3.5 h-3.5 text-slate-400"></i>
+                <span id="loginProfileEmailText">email@mandiri.local</span>
+              </p>
+              <div class="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 flex items-center gap-1">
+                  <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i> Akun Terhubung
+                </span>
+                <span id="loginProfileSyncStatus" class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
+                  Cloud Sinkronisasi Aktif
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Statistics for This User -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div class="p-3.5 rounded-xl bg-white border border-slate-200 text-center">
+              <p class="text-[10px] uppercase font-bold text-slate-400">Total Koleksi Buku</p>
+              <p id="userStatTotalBooks" class="text-xl font-extrabold text-amber-900 mt-0.5">0</p>
+            </div>
+            <div class="p-3.5 rounded-xl bg-white border border-slate-200 text-center">
+              <p class="text-[10px] uppercase font-bold text-slate-400">Jadwal Membaca</p>
+              <p id="userStatTotalSchedules" class="text-xl font-extrabold text-sky-900 mt-0.5">0</p>
+            </div>
+            <div class="col-span-2 sm:col-span-1 p-3.5 rounded-xl bg-white border border-slate-200 text-center">
+              <p class="text-[10px] uppercase font-bold text-slate-400">Status Akun</p>
+              <p class="text-xs font-bold text-emerald-700 mt-1 flex items-center justify-center gap-1">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Terverifikasi
+              </p>
+            </div>
+          </div>
+
+          <!-- Navigation actions -->
+          <div class="pt-2 flex flex-col sm:flex-row items-center gap-3">
+            <button onclick="navigateTo('dashboard')" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <i data-lucide="book-open" class="w-4 h-4"></i> Buka Rak Buku Saya
+            </button>
+            <button onclick="navigateTo('schedule')" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <i data-lucide="calendar" class="w-4 h-4"></i> Cek Jadwal Baca
+            </button>
+          </div>
+
         </div>
       </div>
 
@@ -990,21 +1619,212 @@
 
 
   <!-- ============================================================== -->
+  <!-- MODAL 6: LOGIN / AKUN GOOGLE QUICK MODAL -->
+  <!-- ============================================================== -->
+  <div id="modal-auth" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 my-8 animate-scale-in relative">
+      <button onclick="closeAuthModal()" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-center space-y-4 pt-2">
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto shadow-sm">
+          <svg class="w-6 h-6" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-bold font-serif text-slate-900">Masuk Akun Google</h3>
+          <p class="text-xs text-slate-500 mt-1">Sinkronkan perpustakaan digital Anda secara aman.</p>
+        </div>
+
+        <div id="modal-auth-content" class="pt-2 space-y-3">
+          <button onclick="signInWithGoogle(); closeAuthModal();" class="w-full py-4 px-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 font-bold border-2 border-slate-200 hover:border-amber-500 shadow-md flex items-center justify-center gap-3 transition-all text-sm sm:text-base cursor-pointer">
+            <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>Continue to Google</span>
+          </button>
+          <div>
+            <button onclick="closeAuthModal(); skipLoginToDashboard();" class="text-xs font-semibold text-slate-500 hover:text-amber-800 transition-colors py-1.5 px-3 rounded-lg hover:bg-amber-50/60 inline-flex items-center gap-1 cursor-pointer">
+              <span>Lewati & Masuk tanpa Akun</span>
+              <i data-lucide="arrow-right" class="w-3 h-3"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 text-center">
+            Akses aman terenkripsi via Google OAuth
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- MODAL 7: GOOGLE ACCOUNT SELECTION & LOGIN DIALOG -->
+  <!-- ============================================================== -->
+  <div id="modal-google-input" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 my-8 animate-scale-in relative">
+      <button onclick="closeGoogleInputModal()" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer" title="Tutup">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Google Branding Header -->
+      <div class="text-center space-y-2 pt-1 pb-4 border-b border-slate-100">
+        <div class="w-12 h-12 rounded-2xl bg-white text-slate-800 flex items-center justify-center mx-auto shadow-sm border border-slate-200">
+          <svg class="w-6 h-6" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold font-serif text-slate-900">Masuk dengan Akun Google</h3>
+        <p class="text-xs text-slate-500">Pilih akun untuk melanjutkan ke Perpustakaan Mandiri</p>
+      </div>
+
+      <!-- Quick One-Click Google Profile Card -->
+      <div class="mt-5 space-y-4">
+        <div onclick="selectQuickGoogleAccount('Harits', 'harits.mandiri@gmail.com')" class="p-3.5 rounded-2xl border-2 border-amber-500/80 bg-amber-50/40 hover:bg-amber-100/60 transition-all cursor-pointer flex items-center justify-between group shadow-xs">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-amber-700 text-white font-bold flex items-center justify-center text-sm shadow-xs">
+              H
+            </div>
+            <div class="text-left">
+              <div class="flex items-center gap-1.5">
+                <span class="text-sm font-bold text-slate-900 group-hover:text-amber-900">Harits</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-200/80 text-amber-900">Default</span>
+              </div>
+              <p class="text-xs text-slate-500 font-mono">harits.mandiri@gmail.com</p>
+            </div>
+          </div>
+          <span class="text-xs font-bold text-amber-800 bg-white px-2.5 py-1.5 rounded-xl border border-amber-200 group-hover:bg-amber-700 group-hover:text-white transition-all">
+            Pilih <i data-lucide="check" class="w-3.5 h-3.5 inline ml-0.5"></i>
+          </span>
+        </div>
+
+        <!-- Custom Input Form if user wants a different name/email -->
+        <div class="relative py-1">
+          <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+          <div class="relative flex justify-center text-xs text-slate-400 bg-white px-2 font-medium">atau gunakan nama akun lain</div>
+        </div>
+
+        <form id="form-custom-google" onsubmit="handleCustomGoogleSignIn(event)" class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Akun Google Anda</label>
+            <input type="text" id="customGoogleNameInput" placeholder="Contoh: Harits" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-sm" value="Harits" required>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Alamat Gmail</label>
+            <input type="email" id="customGoogleEmailInput" placeholder="nama@gmail.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-sm font-mono" value="harits.mandiri@gmail.com" required>
+          </div>
+          <button type="submit" class="w-full py-3 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-98 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+            <i data-lucide="log-in" class="w-4 h-4"></i> Masuk dengan Akun Ini
+          </button>
+        </form>
+
+        <!-- Skip to Guest Option -->
+        <div class="pt-2 text-center border-t border-slate-100">
+          <button type="button" onclick="closeGoogleInputModal(); skipLoginToDashboard();" class="text-xs font-semibold text-slate-500 hover:text-amber-800 transition-colors py-1 px-3 rounded-lg hover:bg-amber-50 inline-flex items-center gap-1 cursor-pointer">
+            <span>Lewati & Masuk tanpa Akun</span>
+            <i data-lucide="arrow-right" class="w-3 h-3"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- MODAL: THEME SELECTION MOBILE -->
+  <!-- ============================================================== -->
+  <div id="modal-theme-mobile" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 animate-scale-in">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div class="flex items-center gap-2">
+          <i data-lucide="palette" class="w-5 h-5 text-amber-700"></i>
+          <h3 class="font-bold text-base text-slate-900">Pilih Tema Enak di Mata</h3>
+        </div>
+        <button onclick="closeThemeModalMobile()" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="space-y-2.5">
+        <button onclick="switchTheme('parchment'); closeThemeModalMobile();" class="w-full p-3 rounded-2xl border border-amber-200 bg-[#fcf9f2] flex items-center justify-between text-left cursor-pointer">
+          <div class="flex items-center gap-3">
+            <span class="w-5 h-5 rounded-full bg-[#fcf9f2] border-2 border-amber-500 shadow-xs"></span>
+            <div>
+              <p class="font-bold text-xs text-slate-900">Krem Kertas Alami</p>
+              <p class="text-[10px] text-slate-500">Hangat & nyaman seperti buku fisik</p>
+            </div>
+          </div>
+          <span class="theme-check-icon text-amber-800 font-bold text-sm" data-theme-check="parchment">✓</span>
+        </button>
+        <button onclick="switchTheme('sage'); closeThemeModalMobile();" class="w-full p-3 rounded-2xl border border-emerald-200 bg-[#f2f7f3] flex items-center justify-between text-left cursor-pointer">
+          <div class="flex items-center gap-3">
+            <span class="w-5 h-5 rounded-full bg-[#f2f7f3] border-2 border-emerald-500 shadow-xs"></span>
+            <div>
+              <p class="font-bold text-xs text-slate-900">Hijau Sage Lembut</p>
+              <p class="text-[10px] text-slate-500">Menenangkan & cegah lelah mata</p>
+            </div>
+          </div>
+          <span class="theme-check-icon text-emerald-800 font-bold text-sm hidden" data-theme-check="sage">✓</span>
+        </button>
+        <button onclick="switchTheme('mocha'); closeThemeModalMobile();" class="w-full p-3 rounded-2xl border border-amber-300 bg-[#f8f3ec] flex items-center justify-between text-left cursor-pointer">
+          <div class="flex items-center gap-3">
+            <span class="w-5 h-5 rounded-full bg-[#f8f3ec] border-2 border-amber-700 shadow-xs"></span>
+            <div>
+              <p class="font-bold text-xs text-slate-900">Kopi Hangat Sepia</p>
+              <p class="text-[10px] text-slate-500">Nuansa klasik perpustakaan kayu</p>
+            </div>
+          </div>
+          <span class="theme-check-icon text-amber-900 font-bold text-sm hidden" data-theme-check="mocha">✓</span>
+        </button>
+        <button onclick="switchTheme('dark'); closeThemeModalMobile();" class="w-full p-3 rounded-2xl border border-slate-700 bg-[#14171d] flex items-center justify-between text-left text-white cursor-pointer">
+          <div class="flex items-center gap-3">
+            <span class="w-5 h-5 rounded-full bg-[#14171d] border-2 border-slate-400 shadow-xs"></span>
+            <div>
+              <p class="font-bold text-xs text-white">Malam Teduh</p>
+              <p class="text-[10px] text-slate-400">OLED Dark ramah saat baca malam</p>
+            </div>
+          </div>
+          <span class="theme-check-icon text-amber-400 font-bold text-sm hidden" data-theme-check="dark">✓</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
   <!-- MOBILE BOTTOM NAVIGATION DOCK (FIXED ON SCREEN < MD) -->
   <!-- ============================================================== -->
-  <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-amber-100 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] py-2 px-6 flex items-center justify-around">
-    <button id="mobile-nav-btn-landing" onclick="navigateTo('landing')" class="flex flex-col items-center gap-1 font-bold text-amber-900 transition-colors">
-      <i data-lucide="compass" class="w-5 h-5"></i>
-      <span class="text-[11px]">Beranda</span>
-    </button>
-    <button id="mobile-nav-btn-dashboard" onclick="navigateTo('dashboard')" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-900 transition-colors">
+  <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-amber-100 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] py-2 px-2 flex items-center justify-around">
+    <button id="mobile-nav-btn-dashboard" onclick="navigateTo('dashboard')" class="flex flex-col items-center gap-1 font-bold text-amber-900 transition-colors cursor-pointer">
       <i data-lucide="layout-grid" class="w-5 h-5"></i>
-      <span class="text-[11px]">Rak Buku</span>
+      <span class="text-[10px]">Rak Buku</span>
     </button>
-    <button id="mobile-nav-btn-schedule" onclick="navigateTo('schedule')" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-900 transition-colors relative">
+    <button id="mobile-nav-btn-schedule" onclick="navigateTo('schedule')" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-900 transition-colors relative cursor-pointer">
       <i data-lucide="calendar-check" class="w-5 h-5"></i>
-      <span class="text-[11px]">Jadwal</span>
+      <span class="text-[10px]">Jadwal</span>
       <span id="mobile-badge-schedules" class="hidden bg-amber-600 text-white text-[9px] px-1 rounded-full font-bold absolute -top-1 -right-2">0</span>
+    </button>
+    <button id="mobile-nav-btn-evaluation" onclick="navigateTo('evaluation')" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-900 transition-colors cursor-pointer">
+      <i data-lucide="sparkles" class="w-5 h-5"></i>
+      <span class="text-[10px]">Evaluasi</span>
+    </button>
+    <button id="mobile-nav-btn-theme" onclick="openThemeModalMobile()" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-900 transition-colors cursor-pointer">
+      <i data-lucide="palette" class="w-5 h-5"></i>
+      <span class="text-[10px]">Tema</span>
+    </button>
+    <button id="mobile-nav-btn-login" onclick="navigateTo('login')" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-900 transition-colors cursor-pointer">
+      <i data-lucide="user" class="w-5 h-5"></i>
+      <span id="mobile-nav-login-label" class="text-[10px]">Akun</span>
     </button>
   </nav>
 
@@ -1014,6 +1834,6 @@
   <div id="toast-container" class="fixed bottom-20 md:bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- JavaScript Modules with Cache Busting Version -->
-  <script src="app.js?v=2.6.0"></script>
+  <script src="app.js?v=3.3.2"></script>
 </body>
 </html>

@@ -13,8 +13,8 @@
 // ==============================================================================
 // Anda bisa menempelkan URL & Anon Key Supabase Anda di sini, ATAU
 // mengisinya lewat tombol "Cloud Database" di navbar website!
-const DEFAULT_SUPABASE_URL = "";  // Contoh: "https://xyzproject.supabase.co"
-const DEFAULT_SUPABASE_KEY = "";  // Contoh: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+const DEFAULT_SUPABASE_URL = "https://ocucfsglxgvgwjujncst.supabase.co";
+const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jdWNmc2dseGd2Z3dqdWpuY3N0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE1NzUxMTIsImV4cCI6MjEwNzE1MTExMn0.doyKumd4TaK9bfwcrMaWB-5BDBoskxt-mjJ96qu9QMw";
 
 // Global State & Central In-Memory Cache
 let currentView = 'landing';
@@ -28,6 +28,11 @@ let serverInfo = null;
 let isServerOnline = false;
 let isSupabaseActive = false;
 let supabaseClient = null;
+let currentUser = null;
+let isGuestMode = false;
+let currentReadingStatusFilter = 'all'; // 'all', 'unread', 'completed'
+let currentBookshelfLayout = 'grid'; // 'grid', 'dual'
+let currentTheme = localStorage.getItem('PERPUS_THEME') || 'parchment';
 
 // Central In-Memory Cache to ensure Mobile and Desktop render identical state
 let cachedBooks = [];
@@ -117,15 +122,18 @@ class DataRepository {
     if (supaUrl && supaKey && window.supabase) {
       try {
         this.supabase = window.supabase.createClient(supaUrl, supaKey);
+        supabaseClient = this.supabase;
         // Test query sederhana untuk memastikan koneksi valid
         const { error } = await this.supabase.from('books').select('id').limit(1);
         if (!error) {
           this.mode = 'supabase';
           isSupabaseActive = true;
-          supabaseClient = this.supabase;
           this.updateCloudStatusUI(true, 'Supabase Cloud Aktif (Sinkron di Vercel)');
           console.log('⚡ Terhubung ke Supabase Cloud Database!');
           
+          // Setup Realtime Sync otomatis antar-perangkat (Laptop & HP)
+          this.setupRealtimeSync();
+
           // Sinkronkan buku lokal jika ada yang belum terunggah ke Cloud
           this.syncLocalBooksToCloud().catch(console.warn);
           return;
@@ -156,6 +164,29 @@ class DataRepository {
     this.mode = 'indexeddb';
     this.updateCloudStatusUI(false, 'Mode Lokal (Belum Terhubung Cloud)');
     await this.openIndexedDB();
+  }
+
+  // Setup Realtime Sync: mendengarkan perubahan data buku & jadwal dari device lain secara real-time
+  setupRealtimeSync() {
+    if (!this.supabase) return;
+    try {
+      this.supabase
+        .channel('public:realtime_library')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, async () => {
+          console.log('⚡ Sinkronisasi otomatis: Perubahan buku terdeteksi dari perangkat lain!');
+          await loadAndSyncData();
+          if (currentView === 'dashboard') renderDashboardView();
+          if (currentView === 'landing') renderLandingView();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, async () => {
+          console.log('⚡ Sinkronisasi otomatis: Perubahan jadwal terdeteksi dari perangkat lain!');
+          await loadAndSyncData();
+          if (currentView === 'schedule') renderScheduleView();
+        })
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime sync setup warning:', e);
+    }
   }
 
   updateCloudStatusUI(isOnline, statusText) {
@@ -683,17 +714,37 @@ async function seedDefaultDataIfEmpty() {
 // 3. NAVIGATION & VIEW CONTROLLER
 // ==============================================================================
 function navigateTo(viewName) {
+  // Gate Autentikasi: Sebelum masuk ke Dashboard (Rak Buku), Jadwal Baca, atau Evaluasi, HARUS login akun terlebih dahulu (atau lewati sebagai tamu)!
+  if ((viewName === 'dashboard' || viewName === 'schedule' || viewName === 'evaluation') && !currentUser && !isGuestMode) {
+    showToast('Silakan masuk dengan akun Anda atau pilih lewati untuk masuk sebagai tamu.', 'info');
+    viewName = 'login';
+  }
+
   currentView = viewName;
 
-  document.getElementById('view-landing').classList.add('hidden');
-  document.getElementById('view-dashboard').classList.add('hidden');
-  document.getElementById('view-schedule').classList.add('hidden');
+  const views = ['landing', 'dashboard', 'schedule', 'evaluation', 'login'];
+  views.forEach((v) => {
+    const el = document.getElementById(`view-${v}`);
+    if (el) el.classList.add('hidden');
+  });
 
   const targetView = document.getElementById(`view-${viewName}`);
   if (targetView) targetView.classList.remove('hidden');
 
+  // Khusus Halaman Login (Portal Masuk Sesuai Screenshot 2):
+  // Sembunyikan top navigation header dan mobile bottom dock agar bersih dan fokus seperti portal login
+  const topHeader = document.querySelector('header');
+  const mobileDock = document.getElementById('mobile-bottom-nav');
+  if (viewName === 'login') {
+    if (topHeader) topHeader.classList.add('hidden');
+    if (mobileDock) mobileDock.classList.add('hidden');
+  } else {
+    if (topHeader) topHeader.classList.remove('hidden');
+    if (mobileDock) mobileDock.classList.remove('hidden');
+  }
+
   // Update Desktop Navigation tab buttons
-  const navIds = ['landing', 'dashboard', 'schedule'];
+  const navIds = ['dashboard', 'schedule', 'evaluation', 'landing', 'login'];
   navIds.forEach((id) => {
     const btn = document.getElementById(`nav-btn-${id}`);
     if (btn) {
@@ -710,9 +761,9 @@ function navigateTo(viewName) {
     const mBtn = document.getElementById(`mobile-nav-btn-${id}`);
     if (mBtn) {
       if (id === viewName) {
-        mBtn.className = 'flex flex-col items-center gap-1 font-bold text-amber-900 transition-colors';
+        mBtn.className = 'flex flex-col items-center gap-1 font-bold text-amber-900 transition-colors cursor-pointer';
       } else {
-        mBtn.className = 'flex flex-col items-center gap-1 text-slate-500 hover:text-amber-900 transition-colors';
+        mBtn.className = 'flex flex-col items-center gap-1 text-slate-500 hover:text-amber-900 transition-colors cursor-pointer';
       }
     }
   });
@@ -723,6 +774,10 @@ function navigateTo(viewName) {
     renderDashboardView();
   } else if (viewName === 'schedule') {
     renderScheduleView();
+  } else if (viewName === 'evaluation') {
+    renderEvaluationView();
+  } else if (viewName === 'login') {
+    renderLoginView();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -736,9 +791,30 @@ async function renderDashboardView(forceRefresh = false) {
     await loadAndSyncData();
   }
   updateStatistics(cachedBooks, cachedSchedules);
+  updateReaderEvaluation();
+
+  // Update Header Welcome Title & User Badge (Sesuai Screenshot 3)
+  const headingTitle = document.getElementById('dashboardHeadingTitle');
+  const subHeading = document.getElementById('dashboardSubHeading');
+  const userBadge = document.getElementById('dashboardUserBadge');
+  const userBadgeName = document.getElementById('dashboardUserBadgeName');
+
+  if (currentUser) {
+    const rawName = currentUser.user_metadata?.full_name || currentUser.name || 'Harits';
+    if (headingTitle) headingTitle.innerHTML = `Selamat Datang, ${escapeHTML(rawName)}! <span class="inline-block">👋</span>`;
+    if (subHeading) subHeading.textContent = 'Kelola koleksi buku fisik & digital Anda di satu rak yang rapi.';
+    if (userBadge) userBadge.classList.remove('hidden');
+    if (userBadgeName) userBadgeName.textContent = rawName;
+  } else {
+    if (headingTitle) headingTitle.textContent = 'Rak Buku & Dashboard';
+    if (subHeading) subHeading.textContent = 'Mode Tamu — Kelola koleksi buku fisik & digital Anda di satu rak yang rapi.';
+    if (userBadge) userBadge.classList.add('hidden');
+  }
 
   const container = document.getElementById('bookshelf-grid');
   const emptyState = document.getElementById('empty-bookshelf');
+  const dualUnreadList = document.getElementById('dual-unread-list');
+  const dualCompletedList = document.getElementById('dual-completed-list');
   if (!container || !emptyState) return;
 
   const filtered = cachedBooks.filter((book) => {
@@ -753,20 +829,49 @@ async function renderDashboardView(forceRefresh = false) {
       (book.author || '').toLowerCase().includes(searchLow) ||
       (book.notes || '').toLowerCase().includes(searchLow);
 
+    // Reading Status Filter: 'all', 'unread' (Belum Dibaca & Sedang Dibaca), 'completed' (Selesai)
+    let matchReadingStatus = true;
+    if (currentReadingStatusFilter === 'unread') {
+      matchReadingStatus = book.status !== 'Selesai';
+    } else if (currentReadingStatusFilter === 'completed') {
+      matchReadingStatus = book.status === 'Selesai';
+    }
+
     const matchStatus =
       currentStatusFilter === 'all' || book.status === currentStatusFilter;
 
-    return matchCat && matchSearch && matchStatus;
+    return matchCat && matchSearch && matchReadingStatus && matchStatus;
   });
 
   if (filtered.length === 0) {
     container.innerHTML = '';
+    if (dualUnreadList) dualUnreadList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-amber-200">Tidak ada buku dalam daftar ini.</p>`;
+    if (dualCompletedList) dualCompletedList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-emerald-200">Tidak ada buku dalam daftar ini.</p>`;
     emptyState.classList.remove('hidden');
     return;
   }
 
   emptyState.classList.add('hidden');
   container.innerHTML = filtered.map((book) => createBookCardHTML(book)).join('');
+
+  // Dual Column Rendering
+  if (dualUnreadList && dualCompletedList) {
+    const unreadBooks = filtered.filter((b) => b.status !== 'Selesai');
+    const completedBooks = filtered.filter((b) => b.status === 'Selesai');
+
+    if (unreadBooks.length === 0) {
+      dualUnreadList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-amber-200">Semua buku pada kategori ini telah selesai dibaca! 🎉</p>`;
+    } else {
+      dualUnreadList.innerHTML = unreadBooks.map((b) => createDualBookCardHTML(b)).join('');
+    }
+
+    if (completedBooks.length === 0) {
+      dualCompletedList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-emerald-200">Belum ada buku yang ditandai selesai. Selesaikan sesi membaca Anda!</p>`;
+    } else {
+      dualCompletedList.innerHTML = completedBooks.map((b) => createDualBookCardHTML(b)).join('');
+    }
+  }
+
   lucide.createIcons();
 }
 
@@ -781,12 +886,12 @@ function createBookCardHTML(book) {
 
   const catIcon = isKeagamaan ? 'book-heart' : isNetwork ? 'server' : 'bookmark';
 
-  const statusColor =
-    book.status === 'Selesai'
-      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-      : book.status === 'Sedang Dibaca'
-      ? 'bg-sky-50 text-sky-700 border-sky-200'
-      : 'bg-slate-100 text-slate-600 border-slate-200';
+  const isDone = book.status === 'Selesai';
+  const statusColor = isDone
+    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold'
+    : book.status === 'Sedang Dibaca'
+    ? 'bg-sky-50 text-sky-700 border-sky-200 font-medium'
+    : 'bg-slate-100 text-slate-600 border-slate-200 font-medium';
 
   const total = book.totalPages || 100;
   const current = book.currentPage || 0;
@@ -833,7 +938,7 @@ function createBookCardHTML(book) {
             <span class="px-2 py-0.5 rounded text-[11px] font-semibold border ${catBadgeColor}">
               ${escapeHTML(book.category)}
             </span>
-            <span class="px-2 py-0.5 rounded text-[11px] font-medium border ${statusColor}">
+            <span class="px-2 py-0.5 rounded text-[11px] border ${statusColor}">
               ${escapeHTML(book.status)}
             </span>
           </div>
@@ -861,28 +966,400 @@ function createBookCardHTML(book) {
         </div>
       </div>
 
-      <div class="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between gap-1 text-xs">
-        ${hasPdf ? `
-          <button onclick="openPdfReader('${book.id}')" class="flex-1 py-2 px-3 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors">
-            <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Baca PDF
-          </button>
-        ` : `
-          <button onclick="openEditBookModal('${book.id}')" class="flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center justify-center gap-1.5 transition-colors">
-            <i data-lucide="file-up" class="w-3.5 h-3.5 text-amber-700"></i> Upload PDF
-          </button>
-        `}
+      <div class="pt-3 mt-3 border-t border-slate-100 flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-1 text-xs">
+          ${hasPdf ? `
+            <button onclick="openPdfReader('${book.id}')" class="flex-1 py-2 px-3 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer">
+              <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Baca PDF
+            </button>
+          ` : `
+            <button onclick="openEditBookModal('${book.id}')" class="flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
+              <i data-lucide="file-up" class="w-3.5 h-3.5 text-amber-700"></i> Upload PDF
+            </button>
+          `}
 
-        <div class="flex items-center gap-1">
-          <button onclick="openEditBookModal('${book.id}')" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors" title="Edit Detail">
-            <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-          </button>
-          <button onclick="confirmDeleteBook('${book.id}')" class="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Hapus Buku">
-            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-          </button>
+          <div class="flex items-center gap-1">
+            <button onclick="openEditBookModal('${book.id}')" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer" title="Edit Detail">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </button>
+            <button onclick="confirmDeleteBook('${book.id}')" class="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer" title="Hapus Buku">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
         </div>
+
+        <!-- 1-Click Fast Toggle Status: Selesai / Sedang Dibaca -->
+        <button onclick="toggleBookReadStatus('${book.id}')" class="w-full py-1.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${isDone ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200'}">
+          <i data-lucide="${isDone ? 'check-check' : 'check'}" class="w-3.5 h-3.5 ${isDone ? 'text-emerald-600' : 'text-amber-700'}"></i>
+          <span>${isDone ? 'Sudah Selesai Dibaca ✓' : 'Tandai Sudah Selesai ✓'}</span>
+        </button>
       </div>
     </div>
   `;
+}
+
+function createDualBookCardHTML(book) {
+  const isDone = book.status === 'Selesai';
+  const total = book.totalPages || 100;
+  const current = book.currentPage || 0;
+  const progressPct = Math.min(100, Math.round((current / total) * 100));
+  const hasPdf = !!(book.pdfUrl || book.pdfBlob);
+
+  return `
+    <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all space-y-3">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${isDone ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'} mb-1">
+            ${escapeHTML(book.category || 'Buku')}
+          </span>
+          <h4 class="font-serif font-bold text-sm text-slate-900 truncate" title="${escapeHTML(book.title)}">
+            ${escapeHTML(book.title)}
+          </h4>
+          <p class="text-[11px] text-slate-500 truncate">Penulis: ${escapeHTML(book.author || '-')}</p>
+        </div>
+        <button onclick="toggleBookReadStatus('${book.id}')" class="shrink-0 p-1.5 rounded-xl ${isDone ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-900'} transition-colors cursor-pointer" title="${isDone ? 'Ubah ke sedang dibaca' : 'Tandai sudah selesai'}">
+          <i data-lucide="${isDone ? 'check-check' : 'check'}" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-1">
+        <div class="flex items-center justify-between text-[10px] text-slate-500">
+          <span>${current} / ${total} hal</span>
+          <span class="font-bold ${isDone ? 'text-emerald-700' : 'text-amber-800'}">${progressPct}%</span>
+        </div>
+        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div class="h-full ${isDone ? 'bg-emerald-500' : 'bg-amber-600'} rounded-full transition-all" style="width: ${progressPct}%"></div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+        ${hasPdf ? `
+          <button onclick="openPdfReader('${book.id}')" class="text-[11px] font-bold text-amber-800 hover:text-amber-900 flex items-center gap-1 cursor-pointer">
+            <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Baca PDF
+          </button>
+        ` : `
+          <button onclick="openEditBookModal('${book.id}')" class="text-[11px] text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer">
+            <i data-lucide="file-up" class="w-3.5 h-3.5"></i> Upload PDF
+          </button>
+        `}
+        <button onclick="toggleBookReadStatus('${book.id}')" class="text-[11px] font-semibold ${isDone ? 'text-emerald-700' : 'text-amber-800'} hover:underline cursor-pointer">
+          ${isDone ? 'Sudah Dibaca ✓' : 'Tandai Selesai ✓'}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// 5 KATA-KATA BIJAK & MAKNANYA UNTUK PEMBACA
+const INSPIRATIONAL_QUOTES = [
+  {
+    id: 1,
+    author: "Nelson Mandela",
+    role: "Pejuang Kemanusiaan & Tokoh Perdamaian Dunia",
+    quote: "“Pendidikan adalah senjata paling ampuh yang dapat kamu gunakan untuk mengubah dunia.”",
+    explanationLabel: "Makna",
+    explanation: "Ilmu dapat menjadi bekal untuk mengubah kehidupan dan memberikan manfaat kepada orang lain.",
+    badge: "1",
+    initials: "NM"
+  },
+  {
+    id: 2,
+    author: "Benjamin Franklin",
+    role: "Polimatik, Penemu & Negarawan",
+    quote: "“Investasi dalam pengetahuan memberikan bunga terbaik.”",
+    explanationLabel: "Makna",
+    explanation: "Waktu dan usaha yang kamu gunakan untuk belajar dapat memberikan manfaat dalam jangka panjang.",
+    badge: "2",
+    initials: "BF"
+  },
+  {
+    id: 3,
+    author: "Calvin Coolidge",
+    role: "Presiden Amerika Serikat ke-30",
+    quote: "“Nothing in this world can take the place of persistence.”",
+    explanationLabel: "Artinya",
+    explanation: "Tidak ada sesuatu di dunia ini yang dapat menggantikan ketekunan.",
+    badge: "3",
+    initials: "CC"
+  },
+  {
+    id: 4,
+    author: "Michael Jordan",
+    role: "Legenda Bola Basket Dunia & Atlet Berprestasi",
+    quote: "“I've failed over and over and over again in my life. And that is why I succeed.”",
+    explanationLabel: "Artinya",
+    explanation: "Saya telah gagal berulang kali dalam hidup saya. Itulah sebabnya saya berhasil.",
+    badge: "4",
+    initials: "MJ"
+  },
+  {
+    id: 5,
+    author: "James Clear",
+    role: "Penulis Buku 'Atomic Habits'",
+    quote: "“You do not rise to the level of your goals. You fall to the level of your systems.”",
+    explanationLabel: "Artinya",
+    explanation: "Kamu tidak selalu mencapai tingkat tujuanmu; kamu cenderung kembali pada tingkat sistem atau kebiasaan yang telah kamu bangun.",
+    badge: "5",
+    initials: "JC"
+  }
+];
+
+function filterReadingStatus(statusMode) {
+  currentReadingStatusFilter = statusMode;
+
+  const pills = ['all', 'unread', 'completed'];
+  pills.forEach((p) => {
+    const el = document.getElementById(`status-pill-${p}`);
+    if (el) {
+      if (p === statusMode) {
+        el.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-700 text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer';
+      } else {
+        el.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-amber-900 hover:bg-amber-50 border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer';
+      }
+    }
+  });
+
+  renderDashboardView();
+}
+
+function toggleBookshelfLayout(mode) {
+  currentBookshelfLayout = mode;
+  const gridEl = document.getElementById('bookshelf-grid');
+  const dualEl = document.getElementById('bookshelf-dual-container');
+  const gridBtn = document.getElementById('layout-grid-btn');
+  const dualBtn = document.getElementById('layout-dual-btn');
+
+  if (mode === 'grid') {
+    if (gridEl) gridEl.classList.remove('hidden');
+    if (dualEl) dualEl.classList.add('hidden');
+    if (gridBtn) {
+      gridBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-slate-800 shadow-2xs flex items-center gap-1 cursor-pointer';
+    }
+    if (dualBtn) {
+      dualBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer';
+    }
+  } else {
+    if (gridEl) gridEl.classList.add('hidden');
+    if (dualEl) dualEl.classList.remove('hidden');
+    if (dualBtn) {
+      dualBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-slate-800 shadow-2xs flex items-center gap-1 cursor-pointer';
+    }
+    if (gridBtn) {
+      gridBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer';
+    }
+  }
+
+  renderDashboardView();
+}
+
+async function toggleBookReadStatus(bookId) {
+  const book = cachedBooks.find((b) => b.id === bookId);
+  if (!book) return;
+
+  const wasCompleted = book.status === 'Selesai';
+  if (wasCompleted) {
+    book.status = 'Sedang Dibaca';
+  } else {
+    book.status = 'Selesai';
+    book.currentPage = book.totalPages || 100;
+  }
+  book.updatedAt = new Date().toISOString();
+
+  try {
+    await dataRepo.saveBook(book);
+    showToast(
+      wasCompleted
+        ? `Buku "${book.title}" dikembalikan ke status Sedang Dibaca.`
+        : `Luar biasa! Buku "${book.title}" ditandai sudah selesai dibaca! 🏆`,
+      'success'
+    );
+    await loadAndSyncData();
+    renderDashboardView();
+    if (currentView === 'evaluation') {
+      renderEvaluationView();
+    }
+  } catch (err) {
+    console.error('Error toggling book status:', err);
+    showToast('Gagal mengubah status buku: ' + err.message, 'error');
+  }
+}
+
+function updateReaderEvaluation() {
+  const total = cachedBooks.length;
+  const completed = cachedBooks.filter((b) => b.status === 'Selesai').length;
+  const unread = total - completed;
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  let totalPagesRead = 0;
+  cachedBooks.forEach((b) => {
+    totalPagesRead += (b.currentPage || 0);
+  });
+
+  const setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+
+  setText('evalCountDone', completed);
+  setText('evalCountUnread', unread);
+  setText('evalPercentRatio', `${percent}%`);
+
+  const headlineEl = document.getElementById('readerEvaluationHeadline');
+  if (headlineEl) {
+    headlineEl.textContent = `Kemajuan Membaca: ${percent}% Selesai (${completed} dari ${total} buku)`;
+  }
+
+  const reflectionEl = document.getElementById('readerEvaluationReflection');
+  if (reflectionEl) {
+    if (percent === 100 && total > 0) {
+      reflectionEl.innerHTML = `<strong>Luar biasa!</strong> Seluruh buku di rak Anda telah tuntas dibaca. Seperti kata Benjamin Franklin: <em>“Investasi dalam pengetahuan memberikan bunga terbaik.”</em> Terus tambah wawasan baru!`;
+    } else if (percent >= 50) {
+      reflectionEl.innerHTML = `<strong>Konsistensi Hebat!</strong> Lebih dari separuh buku telah Anda tamatkan (${percent}%). Seperti kata Calvin Coolidge: <em>“Nothing in this world can take the place of persistence.”</em> Tetap tekun!`;
+    } else if (completed > 0) {
+      reflectionEl.innerHTML = `<strong>Awal yang Baik!</strong> Anda telah menyelesaikan ${completed} buku. Menurut James Clear: <em>“You do not rise to the level of your goals. You fall to the level of your systems.”</em> Bangun kebiasaan membaca harian secara konsisten.`;
+    } else {
+      reflectionEl.innerHTML = `"Pendidikan adalah senjata paling ampuh yang dapat kamu gunakan untuk mengubah dunia." — Nelson Mandela. Pilih satu buku hari ini dan mulailah membaca bab pertamanya!`;
+    }
+  }
+
+  // Update Status Pill Badges
+  setText('badge-count-all', total);
+  setText('badge-count-unread', unread);
+  setText('badge-count-completed', completed);
+  setText('dual-count-unread', unread);
+  setText('dual-count-completed', completed);
+
+  // Update Full Evaluation View
+  setText('evalFullPercent', `${percent}%`);
+  setText('evalFullRatioText', `${completed} dari ${total} buku telah selesai dibaca`);
+  setText('evalFullPages', totalPagesRead);
+  setText('evalFullDiscipline', percent >= 50 ? 'Sangat Disiplin ★★★' : completed > 0 ? 'Berkembang ★★☆' : 'Membangun Kebiasaan ★☆☆');
+}
+
+function renderEvaluationView() {
+  updateReaderEvaluation();
+  const container = document.getElementById('quotesFullContainer');
+  if (!container) return;
+
+  container.innerHTML = INSPIRATIONAL_QUOTES.map((q) => {
+    return `
+      <div class="quote-card bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs flex flex-col justify-between space-y-4">
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-amber-800 text-white font-bold flex items-center justify-center text-xs shadow-xs">
+                ${q.initials}
+              </div>
+              <div>
+                <h4 class="font-bold text-sm text-slate-900">${q.author}</h4>
+                <p class="text-[10px] text-slate-500">${q.role}</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">${q.badge}</span>
+          </div>
+          <blockquote class="text-sm font-serif italic text-slate-800 leading-relaxed bg-amber-50/40 p-4 rounded-2xl border border-amber-100">
+            ${q.quote}
+          </blockquote>
+        </div>
+        <div class="pt-3 border-t border-slate-100 space-y-2">
+          <p class="text-xs text-slate-600 leading-relaxed">
+            <strong class="text-amber-900 font-bold">${q.explanationLabel}:</strong> ${q.explanation}
+          </p>
+          <button onclick="copyQuoteText('${q.quote.replace(/['"]/g, '')} — ${q.author}')" class="text-[11px] font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1.5 cursor-pointer pt-1">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Salin Kutipan
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  lucide.createIcons();
+}
+
+function copyQuoteText(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Kutipan berhasil disalin ke papan klip! ✓', 'success');
+    }).catch(() => {
+      showToast('Kutipan disalin.', 'info');
+    });
+  } else {
+    showToast('Kutipan: ' + text.substring(0, 30) + '...', 'info');
+  }
+}
+
+// ==============================================================================
+// THEME SWITCHER LOGIC (EYE-COMFORT THEMES)
+// ==============================================================================
+function initTheme() {
+  const saved = localStorage.getItem('PERPUS_THEME') || 'parchment';
+  applyTheme(saved, false);
+}
+
+function applyTheme(themeName, showToastMsg = true) {
+  currentTheme = themeName;
+  document.documentElement.setAttribute('data-theme', themeName);
+  localStorage.setItem('PERPUS_THEME', themeName);
+
+  // Update checkmarks
+  document.querySelectorAll('.theme-check-icon').forEach((el) => {
+    if (el.getAttribute('data-theme-check') === themeName) {
+      el.classList.remove('hidden');
+    } else {
+      el.classList.add('hidden');
+    }
+  });
+
+  // Update navbar label
+  const labelEl = document.getElementById('currentThemeLabel');
+  if (labelEl) {
+    const labels = {
+      parchment: 'Tema: Krem',
+      sage: 'Tema: Sage',
+      mocha: 'Tema: Kopi',
+      dark: 'Tema: Gelap'
+    };
+    labelEl.textContent = labels[themeName] || 'Tema: Krem';
+  }
+
+  if (showToastMsg) {
+    const friendlyNames = {
+      parchment: 'Krem Kertas Alami (Hangat & Lembut)',
+      sage: 'Hijau Sage Lembut (Teduh di Mata)',
+      mocha: 'Kopi Hangat Sepia (Klasik Nyaman)',
+      dark: 'Malam Teduh (OLED Dark)'
+    };
+    showToast(`Tema warna ${friendlyNames[themeName] || themeName} diaktifkan!`, 'info');
+  }
+}
+
+function switchTheme(themeName) {
+  applyTheme(themeName, true);
+  const menu = document.getElementById('themeDropdownMenu');
+  if (menu) menu.classList.add('hidden');
+}
+
+function toggleThemeDropdown() {
+  const menu = document.getElementById('themeDropdownMenu');
+  if (menu) menu.classList.toggle('hidden');
+}
+
+document.addEventListener('click', (e) => {
+  const container = document.getElementById('themeSwitcherContainer');
+  const menu = document.getElementById('themeDropdownMenu');
+  if (container && menu && !container.contains(e.target)) {
+    menu.classList.add('hidden');
+  }
+});
+
+function openThemeModalMobile() {
+  const modal = document.getElementById('modal-theme-mobile');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeThemeModalMobile() {
+  const modal = document.getElementById('modal-theme-mobile');
+  if (modal) modal.classList.add('hidden');
 }
 
 // ==============================================================================
@@ -1202,6 +1679,12 @@ function toggleScheduleView(view) {
 // 8. SCHEDULE ACTIONS & MODAL
 // ==============================================================================
 function openAddScheduleModal(defaultStatus = 'Rencana') {
+  if (!currentUser && !isGuestMode) {
+    showToast('Silakan masuk dengan Akun Google atau masuk sebagai tamu!', 'warning');
+    navigateTo('login');
+    return;
+  }
+
   document.getElementById('sched-edit-id').value = '';
   document.getElementById('sched-title-input').value = '';
   document.getElementById('sched-date-input').value = new Date().toISOString().split('T')[0];
@@ -1297,6 +1780,12 @@ async function confirmDeleteSchedule(id) {
 // 9. BOOK MANAGEMENT & UPLOAD PDF
 // ==============================================================================
 function openAddBookModal() {
+  if (!currentUser && !isGuestMode) {
+    showToast('Silakan masuk dengan Akun Google terlebih dahulu untuk menambah buku!', 'warning');
+    navigateTo('login');
+    return;
+  }
+
   document.getElementById('book-edit-id').value = '';
   document.getElementById('book-title-input').value = '';
   document.getElementById('book-author-input').value = '';
@@ -1478,6 +1967,12 @@ async function confirmDeleteBook(id) {
 // 10. PDF VIEWER / READER MODAL (INTERNAL)
 // ==============================================================================
 async function openPdfReader(bookId) {
+  if (!currentUser && !isGuestMode) {
+    showToast('Silakan masuk dengan Akun Google terlebih dahulu untuk membaca buku!', 'warning');
+    navigateTo('login');
+    return;
+  }
+
   const book = await dataRepo.getBook(bookId);
   if (!book || (!book.pdfUrl && !book.pdfBlob)) {
     showToast('Berkas PDF tidak ditemukan pada buku ini.', 'warning');
@@ -1586,8 +2081,9 @@ async function handleSaveCloudConfig(e) {
     // Sinkronkan buku lokal di IndexedDB jika ada yang belum terunggah ke Cloud
     await dataRepo.syncLocalBooksToCloud();
 
-    // Reload tampilan dengan data cloud
+    // Reload tampilan dengan data cloud dan inisialisasi autentikasi
     await loadAndSyncData();
+    await initAuth();
     renderDashboardView();
     renderLandingView();
     renderScheduleView();
@@ -1603,6 +2099,7 @@ function handleDisconnectCloud() {
     dataRepo.mode = 'indexeddb';
     isSupabaseActive = false;
     supabaseClient = null;
+    updateAuthUI();
     dataRepo.updateCloudStatusUI(false, 'Mode Lokal (Belum Terhubung Cloud)');
     closeCloudConfigModal();
     showToast('Koneksi Cloud diputuskan. Beralih ke penyimpanan lokal.', 'info');
@@ -1965,14 +2462,390 @@ function formatDateId(dateStr) {
 }
 
 // ==============================================================================
-// 17. INITIALIZATION ON PAGE LOAD
+// 17. AUTHENTICATION & GOOGLE LOGIN (SUPABASE OAUTH & DEMO MODE)
+// ==============================================================================
+
+function renderLoginView() {
+  updateAuthUI();
+  lucide.createIcons();
+}
+
+async function initAuth() {
+  const activeSession = sessionStorage.getItem('PERPUS_ACTIVE_SESSION');
+  const storedDemoUser = localStorage.getItem('PERPUS_DEMO_USER');
+  let savedName = 'Harits';
+
+  if (storedDemoUser) {
+    try {
+      const parsed = JSON.parse(storedDemoUser);
+      savedName = parsed.user_metadata?.full_name || parsed.name || 'Harits';
+      if (activeSession === 'true') {
+        currentUser = parsed;
+        isGuestMode = false;
+      }
+    } catch {
+      currentUser = null;
+    }
+  } else if (activeSession === 'guest') {
+    isGuestMode = true;
+    currentUser = null;
+  }
+
+  // Pre-fill input form login dengan nama yang tersimpan
+  const accountInput = document.getElementById('loginAccountInput');
+  if (accountInput && savedName) {
+    accountInput.value = savedName;
+  }
+
+  // 2. Jika Supabase client aktif dan ada sesi aktif resmi
+  if (supabaseClient && activeSession === 'true') {
+    try {
+      const { data: { session }, error } = await supabaseClient.auth.getSession();
+      if (session && session.user) {
+        currentUser = session.user;
+        localStorage.removeItem('PERPUS_DEMO_USER');
+      }
+
+      // Pasang listener status autentikasi real-time Supabase
+      supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        console.log('Supabase Auth Change Event:', event);
+        if (session && session.user) {
+          currentUser = session.user;
+          sessionStorage.setItem('PERPUS_ACTIVE_SESSION', 'true');
+          localStorage.removeItem('PERPUS_DEMO_USER');
+          showToast(`Selamat datang, ${currentUser.user_metadata?.full_name || currentUser.email}!`, 'success');
+          updateAuthUI();
+          if (currentView === 'login') {
+            navigateTo('dashboard');
+          }
+        } else if (event === 'SIGNED_OUT') {
+          currentUser = null;
+          sessionStorage.removeItem('PERPUS_ACTIVE_SESSION');
+          localStorage.removeItem('PERPUS_DEMO_USER');
+          updateAuthUI();
+        }
+      });
+    } catch (err) {
+      console.warn('Auth getSession error:', err);
+    }
+  }
+
+  // 3. Cek apakah ada error di URL hash dari proses redirect OAuth
+  if (window.location.hash && window.location.hash.includes('error=')) {
+    try {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const errorMsg = hashParams.get('error_description') || hashParams.get('error');
+      if (errorMsg) {
+        console.warn('OAuth URL redirect notice:', errorMsg);
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    } catch (e) {
+      console.warn('OAuth URL error parsing:', e);
+    }
+  }
+
+  updateAuthUI();
+}
+
+function updateAuthUI() {
+  const isAuth = !!currentUser;
+
+  // Nama, avatar, email pengguna
+  let userName = 'Pengguna';
+  let userEmail = 'pengguna@gmail.com';
+  let userAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80';
+
+  if (currentUser) {
+    userName = currentUser.user_metadata?.full_name || 
+               currentUser.user_metadata?.name || 
+               (currentUser.email ? currentUser.email.split('@')[0] : 'Pengguna');
+    userEmail = currentUser.email || 'pengguna@gmail.com';
+    userAvatar = currentUser.user_metadata?.avatar_url || 
+                 currentUser.user_metadata?.picture || 
+                 `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=ea4335&color=fff&bold=true`;
+  }
+
+  // 0. Dashboard Header Account Display (Tampilkan nama HANYA jika login, sembunyikan jika Guest/Lewati)
+  const dashboardUserBadge = document.getElementById('dashboardUserBadge');
+  const dashboardUserBadgeName = document.getElementById('dashboardUserBadgeName');
+  const dashboardSubHeading = document.getElementById('dashboardSubHeading');
+
+  if (isAuth && currentUser) {
+    if (dashboardUserBadge) {
+      dashboardUserBadge.classList.remove('hidden');
+      dashboardUserBadge.classList.add('inline-flex');
+    }
+    if (dashboardUserBadgeName) {
+      dashboardUserBadgeName.textContent = userName;
+    }
+    if (dashboardSubHeading) {
+      dashboardSubHeading.textContent = `Selamat datang, ${userName}! Kelola koleksi buku fisik & digital Anda di satu rak yang rapi.`;
+    }
+  } else {
+    // Mode Guest / Lewati / Belum Login: TIDAK ADA NAMA AKUN DI DASHBOARD
+    if (dashboardUserBadge) {
+      dashboardUserBadge.classList.add('hidden');
+      dashboardUserBadge.classList.remove('inline-flex');
+    }
+    if (dashboardSubHeading) {
+      dashboardSubHeading.textContent = 'Kelola koleksi buku fisik & digital Anda di satu rak yang rapi.';
+    }
+  }
+
+  // 1. Desktop Navbar Tab Text
+  const navLoginText = document.getElementById('nav-login-text');
+  if (navLoginText) {
+    navLoginText.textContent = isAuth ? userName.split(' ')[0] : 'Akun Google';
+  }
+
+  // 2. Desktop Header Buttons
+  const desktopLoginBtn = document.getElementById('desktopLoginBtn');
+  const desktopUserPill = document.getElementById('desktopUserPill');
+  const desktopUserAvatar = document.getElementById('desktopUserAvatar');
+  const desktopUserName = document.getElementById('desktopUserName');
+  const dropdownUserFullName = document.getElementById('dropdownUserFullName');
+  const dropdownUserEmail = document.getElementById('dropdownUserEmail');
+
+  if (desktopLoginBtn && desktopUserPill) {
+    if (isAuth) {
+      desktopLoginBtn.classList.add('hidden');
+      desktopUserPill.classList.remove('hidden');
+      if (desktopUserAvatar) desktopUserAvatar.src = userAvatar;
+      if (desktopUserName) desktopUserName.textContent = userName.split(' ')[0];
+      if (dropdownUserFullName) dropdownUserFullName.textContent = userName;
+      if (dropdownUserEmail) dropdownUserEmail.textContent = userEmail;
+    } else {
+      desktopLoginBtn.classList.remove('hidden');
+      desktopUserPill.classList.add('hidden');
+    }
+  }
+
+  // 3. Mobile Dropdown Menu
+  const mobileLoggedOut = document.getElementById('mobileLoggedOutContainer');
+  const mobileLoggedIn = document.getElementById('mobileLoggedInContainer');
+  const mobileUserAvatar = document.getElementById('mobileUserAvatar');
+  const mobileUserName = document.getElementById('mobileUserName');
+  const mobileUserEmail = document.getElementById('mobileUserEmail');
+
+  if (mobileLoggedOut && mobileLoggedIn) {
+    if (isAuth) {
+      mobileLoggedOut.classList.add('hidden');
+      mobileLoggedIn.classList.remove('hidden');
+      if (mobileUserAvatar) mobileUserAvatar.src = userAvatar;
+      if (mobileUserName) mobileUserName.textContent = userName;
+      if (mobileUserEmail) mobileUserEmail.textContent = userEmail;
+    } else {
+      mobileLoggedOut.classList.remove('hidden');
+      mobileLoggedIn.classList.add('hidden');
+    }
+  }
+
+  // 4. Mobile Bottom Dock Label
+  const mobileDockLabel = document.getElementById('mobile-nav-login-label');
+  if (mobileDockLabel) {
+    mobileDockLabel.textContent = isAuth ? (userName.split(' ')[0] || 'Akun') : 'Akun';
+  }
+
+  // 5. Dedicated View Login Page
+  const viewLoggedOut = document.getElementById('login-view-logged-out');
+  const viewLoggedIn = document.getElementById('login-view-logged-in');
+  const loginProfileAvatar = document.getElementById('loginProfileAvatar');
+  const loginProfileName = document.getElementById('loginProfileName');
+  const loginProfileEmailText = document.getElementById('loginProfileEmailText');
+  const userStatTotalBooks = document.getElementById('userStatTotalBooks');
+  const userStatTotalSchedules = document.getElementById('userStatTotalSchedules');
+  const loginProfileSyncStatus = document.getElementById('loginProfileSyncStatus');
+
+  if (viewLoggedOut && viewLoggedIn) {
+    if (isAuth) {
+      viewLoggedOut.classList.add('hidden');
+      viewLoggedIn.classList.remove('hidden');
+      if (loginProfileAvatar) loginProfileAvatar.src = userAvatar;
+      if (loginProfileName) loginProfileName.textContent = userName;
+      if (loginProfileEmailText) loginProfileEmailText.textContent = userEmail;
+      if (userStatTotalBooks) userStatTotalBooks.textContent = cachedBooks.length;
+      if (userStatTotalSchedules) userStatTotalSchedules.textContent = cachedSchedules.length;
+      if (loginProfileSyncStatus) {
+        loginProfileSyncStatus.textContent = isSupabaseActive 
+          ? 'Cloud Supabase Aktif' 
+          : 'Penyimpanan Lokal Aktif';
+      }
+    } else {
+      viewLoggedOut.classList.remove('hidden');
+      viewLoggedIn.classList.add('hidden');
+    }
+  }
+
+  lucide.createIcons();
+}
+
+function openGoogleInputModal() {
+  const modal = document.getElementById('modal-google-input');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeGoogleInputModal() {
+  const modal = document.getElementById('modal-google-input');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function signInWithGoogle() {
+  openGoogleInputModal();
+}
+
+function selectQuickGoogleAccount(name = 'Harits', email = 'harits.mandiri@gmail.com') {
+  currentUser = {
+    id: 'google-user-' + Date.now(),
+    email: email,
+    user_metadata: {
+      full_name: name,
+      name: name,
+      avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=ea4335&color=fff&bold=true`
+    },
+    app_metadata: {
+      provider: 'google'
+    }
+  };
+  isGuestMode = false;
+  localStorage.setItem('PERPUS_DEMO_USER', JSON.stringify(currentUser));
+  localStorage.removeItem('PERPUS_GUEST_MODE');
+  closeGoogleInputModal();
+  closeAuthModal();
+  updateAuthUI();
+  showToast(`Selamat datang, ${name}!`, 'success');
+  navigateTo('dashboard');
+}
+
+function handleCustomGoogleSignIn(e) {
+  if (e) e.preventDefault();
+  const nameInput = document.getElementById('customGoogleNameInput');
+  const emailInput = document.getElementById('customGoogleEmailInput');
+  const name = (nameInput && nameInput.value.trim()) || 'Harits';
+  const email = (emailInput && emailInput.value.trim()) || 'harits.mandiri@gmail.com';
+  selectQuickGoogleAccount(name, email);
+}
+
+function toggleLoginPasswordVisibility() {
+  const passInput = document.getElementById('loginPasswordInput');
+  const eyeIcon = document.getElementById('loginPasswordEyeIcon');
+  if (!passInput) return;
+  if (passInput.type === 'password') {
+    passInput.type = 'text';
+    if (eyeIcon) eyeIcon.setAttribute('data-lucide', 'eye-off');
+  } else {
+    passInput.type = 'password';
+    if (eyeIcon) eyeIcon.setAttribute('data-lucide', 'eye');
+  }
+  lucide.createIcons();
+}
+
+function handleAccountPasswordLogin(e) {
+  if (e) e.preventDefault();
+  const accountInput = document.getElementById('loginAccountInput');
+  const passInput = document.getElementById('loginPasswordInput');
+  
+  const rawAccount = (accountInput && accountInput.value.trim()) || 'Harits';
+  const password = passInput ? passInput.value : '';
+
+  currentUser = {
+    id: 'user-' + Date.now(),
+    email: rawAccount.includes('@') ? rawAccount : `${rawAccount.toLowerCase().replace(/\s+/g, '.')}@mandiri.local`,
+    user_metadata: {
+      full_name: rawAccount,
+      name: rawAccount,
+      avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(rawAccount)}&background=845136&color=fff&bold=true`
+    },
+    app_metadata: {
+      provider: 'account'
+    }
+  };
+  isGuestMode = false;
+  sessionStorage.setItem('PERPUS_ACTIVE_SESSION', 'true');
+  localStorage.setItem('PERPUS_DEMO_USER', JSON.stringify(currentUser));
+  localStorage.removeItem('PERPUS_GUEST_MODE');
+  closeAuthModal();
+  updateAuthUI();
+  showToast(`Selamat datang, ${rawAccount}! Berhasil masuk ke dashboard.`, 'success');
+  navigateTo('dashboard');
+}
+
+function skipLoginToDashboard() {
+  currentUser = null;
+  isGuestMode = true;
+  sessionStorage.setItem('PERPUS_ACTIVE_SESSION', 'guest');
+  localStorage.setItem('PERPUS_GUEST_MODE', 'true');
+  localStorage.removeItem('PERPUS_DEMO_USER');
+  closeGoogleInputModal();
+  closeAuthModal();
+  updateAuthUI();
+  showToast('Masuk sebagai Tamu (tanpa nama akun).', 'info');
+  navigateTo('dashboard');
+}
+
+async function signOutUser() {
+  if (confirm('Apakah Anda yakin ingin keluar dari akun?')) {
+    sessionStorage.removeItem('PERPUS_ACTIVE_SESSION');
+    localStorage.removeItem('PERPUS_DEMO_USER');
+    localStorage.removeItem('PERPUS_GUEST_MODE');
+    if (supabaseClient) {
+      try {
+        await supabaseClient.auth.signOut();
+      } catch (err) {
+        console.warn('Sign out error:', err);
+      }
+    }
+    currentUser = null;
+    isGuestMode = false;
+    updateAuthUI();
+    showToast('Berhasil keluar dari akun.', 'info');
+    navigateTo('login');
+  }
+}
+
+function toggleUserDropdown() {
+  const menu = document.getElementById('desktopUserDropdown');
+  if (menu) menu.classList.toggle('hidden');
+}
+
+document.addEventListener('click', (e) => {
+  const btn = document.getElementById('desktopUserBtn');
+  const menu = document.getElementById('desktopUserDropdown');
+  if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+    menu.classList.add('hidden');
+  }
+});
+
+function openAuthModal() {
+  const modal = document.getElementById('modal-auth');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('modal-auth');
+  if (modal) modal.classList.add('hidden');
+}
+
+// ==============================================================================
+// 18. INITIALIZATION ON PAGE LOAD
 // ==============================================================================
 window.addEventListener('DOMContentLoaded', async () => {
   try {
+    initTheme();
     await dataRepo.init();
     await seedDefaultDataIfEmpty();
     await loadAndSyncData();
-    renderLandingView();
+    await initAuth();
+    
+    // Portal Masuk: Wajib buka halaman Login terlebih dahulu sebelum masuk ke dashboard!
+    // Hanya jika ada sesi aktif yang sudah login atau memilih tamu pada tab peramban ini yang langsung ke dashboard
+    const activeSession = sessionStorage.getItem('PERPUS_ACTIVE_SESSION');
+    if (activeSession === 'true' && currentUser) {
+      navigateTo('dashboard');
+    } else if (activeSession === 'guest' && isGuestMode) {
+      navigateTo('dashboard');
+    } else {
+      navigateTo('login');
+    }
     lucide.createIcons();
   } catch (err) {
     console.error('Initialization error:', err);

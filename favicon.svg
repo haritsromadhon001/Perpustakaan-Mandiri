@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bookGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b45309" />
+      <stop offset="100%" stop-color="#78350f" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded Shield / Icon Tile -->
+  <rect width="64" height="64" rx="16" fill="url(#bookGrad)" />
+  <!-- Outer subtle border -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="none" stroke="#fef3c7" stroke-width="1.5" stroke-opacity="0.3" />
+  <!-- Open Book Spine & Pages -->
+  <path d="M32 46 C26 42 16 42 12 44 L12 20 C16 18 26 18 32 22 C38 18 48 18 52 20 L52 44 C48 42 38 42 32 46 Z" fill="#fffbeb" />
+  <!-- Left Page Lines -->
+  <line x1="17" y1="26" x2="27" y2="28" stroke="#92400e" stroke-width="2" stroke-linecap="round" />
+  <line x1="17" y1="32" x2="27" y2="34" stroke="#92400e" stroke-width="2" stroke-linecap="round" />
+  <line x1="17" y1="38" x2="24" y2="39" stroke="#92400e" stroke-width="2" stroke-linecap="round" />
+  <!-- Right Page Lines -->
+  <line x1="37" y1="28" x2="47" y2="26" stroke="#92400e" stroke-width="2" stroke-linecap="round" />
+  <line x1="37" y1="34" x2="47" y2="32" stroke="#92400e" stroke-width="2" stroke-linecap="round" />
+  <line x1="40" y1="39" x2="47" y2="38" stroke="#92400e" stroke-width="2" stroke-linecap="round" />
+  <!-- Book Spine Center Divider -->
+  <path d="M32 22 L32 46" stroke="#78350f" stroke-width="2.5" stroke-linecap="round" />
+  <!-- Gold Bookmark Ribbon -->
+  <path d="M30 18 L34 18 L34 29 L32 27 L30 29 Z" fill="url(#goldGrad)" />
+  <!-- Little Sparkle at Top Right -->
+  <path d="M48 12 L49.5 15.5 L53 17 L49.5 18.5 L48 22 L46.5 18.5 L43 17 L46.5 15.5 Z" fill="#fbbf24" />
+</svg>
