@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://perpustakaan-mandiri.vercel.app/sitemap.xml
