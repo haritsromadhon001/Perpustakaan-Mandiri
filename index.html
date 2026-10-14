@@ -74,7 +74,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Custom Styles with Cache Busting -->
-  <link rel="stylesheet" href="style.css?v=3.3.2" />
+  <link rel="stylesheet" href="style.css?v=3.3.3" />
 </head>
 <body class="bg-[#fcfaf7] text-slate-800 antialiased font-sans min-h-screen flex flex-col selection:bg-amber-200 selection:text-amber-900">
 
@@ -114,18 +114,38 @@
         <!-- Right Quick Actions -->
         <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
           
-          <!-- Pengatur Tema Warna Enak di Mata (Eye Comfort Theme Switcher) -->
-          <div class="relative" id="themeSwitcherContainer">
-            <button onclick="toggleThemeDropdown()" id="themeBtn" class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" title="Ubah Tema Warna Nyaman di Mata">
-              <i data-lucide="palette" class="w-4 h-4 text-amber-700"></i>
-              <span class="hidden lg:inline text-xs font-bold" id="currentThemeLabel">Tema: Krem</span>
-              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-amber-700"></i>
+          <!-- Pengatur Tema Warna (Default: Hitam & Putih, disembunyikan di top bar mobile karena sudah ada di dock bawah) -->
+          <div class="relative hidden sm:block" id="themeSwitcherContainer">
+            <button onclick="toggleThemeDropdown()" id="themeBtn" class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" title="Ubah Tema Warna">
+              <i data-lucide="palette" class="w-4 h-4 text-slate-700"></i>
+              <span class="hidden lg:inline text-xs font-bold" id="currentThemeLabel">Tema: Hitam & Putih</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500"></i>
             </button>
             <div id="themeDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 text-xs animate-scale-in">
               <div class="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 flex items-center justify-between">
-                <span>Warna Nyaman di Mata</span>
-                <i data-lucide="eye" class="w-3 h-3 text-amber-600"></i>
+                <span>Pilihan Tema</span>
+                <i data-lucide="palette" class="w-3 h-3 text-slate-700"></i>
               </div>
+              <button onclick="switchTheme('monochrome')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 flex items-center justify-between font-medium text-slate-800 cursor-pointer">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-4 h-4 rounded-full bg-white border-2 border-slate-900 shadow-2xs"></span>
+                  <div>
+                    <p class="font-bold text-xs text-slate-900">Hitam & Putih</p>
+                    <p class="text-[10px] text-slate-500">Monokrom minimalis & bersih</p>
+                  </div>
+                </div>
+                <span class="theme-check-icon text-slate-900 font-bold" data-theme-check="monochrome">✓</span>
+              </button>
+              <button onclick="switchTheme('dark')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-100 flex items-center justify-between font-medium text-slate-800 cursor-pointer">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-4 h-4 rounded-full bg-[#14171d] border-2 border-slate-500 shadow-2xs"></span>
+                  <div>
+                    <p class="font-bold text-xs text-slate-900">Malam OLED</p>
+                    <p class="text-[10px] text-slate-500">Hitam gelap nyaman malam</p>
+                  </div>
+                </div>
+                <span class="theme-check-icon text-slate-900 font-bold hidden" data-theme-check="dark">✓</span>
+              </button>
               <button onclick="switchTheme('parchment')" class="w-full text-left px-3.5 py-2.5 hover:bg-amber-50 flex items-center justify-between font-medium text-slate-800 cursor-pointer">
                 <div class="flex items-center gap-2.5">
                   <span class="w-4 h-4 rounded-full bg-[#fcf9f2] border-2 border-amber-500 shadow-2xs"></span>
@@ -134,7 +154,7 @@
                     <p class="text-[10px] text-slate-500">Hangat alami seperti buku</p>
                   </div>
                 </div>
-                <span class="theme-check-icon text-amber-700 font-bold" data-theme-check="parchment">✓</span>
+                <span class="theme-check-icon text-amber-700 font-bold hidden" data-theme-check="parchment">✓</span>
               </button>
               <button onclick="switchTheme('sage')" class="w-full text-left px-3.5 py-2.5 hover:bg-emerald-50 flex items-center justify-between font-medium text-slate-800 cursor-pointer">
                 <div class="flex items-center gap-2.5">
@@ -155,16 +175,6 @@
                   </div>
                 </div>
                 <span class="theme-check-icon text-amber-800 font-bold hidden" data-theme-check="mocha">✓</span>
-              </button>
-              <button onclick="switchTheme('dark')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-100 flex items-center justify-between font-medium text-slate-800 cursor-pointer">
-                <div class="flex items-center gap-2.5">
-                  <span class="w-4 h-4 rounded-full bg-[#14171d] border-2 border-slate-500 shadow-2xs"></span>
-                  <div>
-                    <p class="font-bold text-xs text-slate-900">Malam Teduh</p>
-                    <p class="text-[10px] text-slate-500">OLED gelap nyaman malam</p>
-                  </div>
-                </div>
-                <span class="theme-check-icon text-slate-900 font-bold hidden" data-theme-check="dark">✓</span>
               </button>
             </div>
           </div>
@@ -219,7 +229,6 @@
           <div class="relative sm:hidden">
             <button onclick="toggleMobileActionMenu()" id="mobileActionMenuBtn" class="p-2 rounded-xl text-slate-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 transition-all flex items-center justify-center shrink-0 active:scale-95" title="Menu Opsi">
               <i data-lucide="more-vertical" class="w-4 h-4 text-amber-900"></i>
-              <span id="mobileMenuCloudDot" class="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
             </button>
             <div id="mobileActionDropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 text-xs">
               
@@ -255,45 +264,33 @@
                 </div>
               </div>
 
-              <!-- Tema Enak di Mata Mobile -->
+              <!-- Tema Mobile -->
               <div class="px-3 py-1.5 text-slate-400 font-semibold uppercase tracking-wider text-[10px] border-b border-slate-100 flex items-center justify-between">
-                <span>Tema Enak di Mata</span>
-                <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-700"></i>
+                <span>Pilihan Tema</span>
+                <i data-lucide="palette" class="w-3.5 h-3.5 text-slate-700"></i>
               </div>
               <div class="p-2 grid grid-cols-2 gap-1.5 border-b border-slate-100">
+                <button onclick="switchTheme('monochrome'); toggleMobileActionMenu();" class="p-2 rounded-xl border border-slate-300 bg-white text-[11px] font-bold text-slate-900 text-left flex items-center gap-1.5 cursor-pointer">
+                  <span class="w-2.5 h-2.5 rounded-full bg-slate-900"></span> Hitam & Putih
+                </button>
+                <button onclick="switchTheme('dark'); toggleMobileActionMenu();" class="p-2 rounded-xl border border-slate-700 bg-[#14171d] text-[11px] font-bold text-white text-left flex items-center gap-1.5 cursor-pointer">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Malam OLED
+                </button>
                 <button onclick="switchTheme('parchment'); toggleMobileActionMenu();" class="p-2 rounded-xl border border-amber-200 bg-[#fcf9f2] text-[11px] font-bold text-amber-900 text-left flex items-center gap-1.5 cursor-pointer">
                   <span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span> Krem
                 </button>
                 <button onclick="switchTheme('sage'); toggleMobileActionMenu();" class="p-2 rounded-xl border border-emerald-200 bg-[#f2f7f3] text-[11px] font-bold text-emerald-900 text-left flex items-center gap-1.5 cursor-pointer">
                   <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> Sage
                 </button>
-                <button onclick="switchTheme('mocha'); toggleMobileActionMenu();" class="p-2 rounded-xl border border-amber-300 bg-[#f8f3ec] text-[11px] font-bold text-amber-900 text-left flex items-center gap-1.5 cursor-pointer">
-                  <span class="w-2.5 h-2.5 rounded-full bg-amber-800"></span> Kopi
-                </button>
-                <button onclick="switchTheme('dark'); toggleMobileActionMenu();" class="p-2 rounded-xl border border-slate-700 bg-[#14171d] text-[11px] font-bold text-white text-left flex items-center gap-1.5 cursor-pointer">
-                  <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Gelap
-                </button>
               </div>
 
-              <div class="px-3 py-1.5 text-slate-400 font-semibold uppercase tracking-wider text-[10px] border-b border-slate-100">
-                Penyimpanan Data
+              <!-- Tombol Logout (Menggantikan Penyimpanan Data Sesuai Permintaan) -->
+              <div class="p-2">
+                <button onclick="signOutUser(); toggleMobileActionMenu();" class="w-full py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer border border-red-200">
+                  <i data-lucide="log-out" class="w-4 h-4 text-red-500"></i>
+                  <span>Keluar dari Akun (Logout)</span>
+                </button>
               </div>
-
-              <!-- Cadangkan Data -->
-              <button onclick="exportLibraryData(); toggleMobileActionMenu();" class="w-full text-left px-3.5 py-2 hover:bg-amber-50 flex items-center gap-2 text-slate-700 font-medium">
-                <i data-lucide="download" class="w-4 h-4 text-amber-600"></i> Cadangkan Data (Backup)
-              </button>
-
-              <!-- Pulihkan Data -->
-              <label class="w-full text-left px-3.5 py-2 hover:bg-amber-50 flex items-center gap-2 text-slate-700 font-medium cursor-pointer">
-                <i data-lucide="upload" class="w-4 h-4 text-amber-600"></i> Pulihkan Data (Restore)
-                <input type="file" id="importFileInputMobile" accept=".json" class="hidden" onchange="importLibraryData(event); toggleMobileActionMenu();" />
-              </label>
-
-              <!-- Kosongkan Data -->
-              <button onclick="confirmResetData(); toggleMobileActionMenu();" class="w-full text-left px-3.5 py-2 hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium">
-                <i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i> Kosongkan Semua Data
-              </button>
             </div>
           </div>
 
@@ -916,45 +913,47 @@
     <!-- ============================================================== -->
     <section id="view-schedule" class="view-panel hidden space-y-6">
 
-      <!-- Notion Page Header -->
-      <div class="bg-white rounded-2xl p-6 sm:p-8 border border-notion-border shadow-xs">
-        <div class="flex items-start justify-between gap-4">
-          <div class="space-y-2">
-            <!-- Notion Icon & Title -->
-            <div class="text-4xl mb-2">🗓️</div>
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-notion-text tracking-tight font-serif">Jadwal & Target Baca Buku</h2>
-            <p class="text-sm text-notion-muted max-w-2xl leading-relaxed">
-              Penanda dan pengatur ritme membaca Anda dengan antarmuka terinspirasi dari <span class="font-semibold text-slate-800">Notion Database</span>. Tentukan target halaman harian, tanggal tenggat, dan pantau kemajuan membaca Anda.
-            </p>
+      <!-- Notion Page Header (Dibersihkan & Responsif untuk HP Sesuai Screenshot) -->
+      <div class="bg-white rounded-2xl p-4 sm:p-7 border border-slate-200/90 shadow-xs space-y-3.5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-100 flex items-center justify-center text-xl sm:text-2xl shrink-0 border border-slate-200">
+              🗓️
+            </div>
+            <div>
+              <h2 class="text-lg sm:text-2xl font-bold font-serif text-slate-900 leading-tight">Jadwal & Target Baca Buku</h2>
+              <p class="text-xs text-slate-500 hidden sm:block">Penanda ritme membaca dan target halaman ala Notion Database.</p>
+            </div>
           </div>
 
-          <button onclick="openAddScheduleModal()" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm shadow-sm flex items-center gap-2 shrink-0 transition-all">
-            <i data-lucide="calendar-plus" class="w-4 h-4 text-amber-300"></i> Buat Jadwal Baru
+          <button onclick="openAddScheduleModal()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 shrink-0 transition-all cursor-pointer">
+            <i data-lucide="calendar-plus" class="w-4 h-4 text-amber-300"></i>
+            <span>Buat Jadwal Baru</span>
           </button>
         </div>
 
         <!-- Notion-style View Tabs & Controls -->
-        <div class="flex flex-wrap items-center justify-between gap-3 mt-6 pt-5 border-t border-notion-border">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-slate-100">
           <div class="flex items-center gap-2">
-            <button id="sched-view-board-btn" onclick="toggleScheduleView('board')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-notion-sidebar text-notion-text border border-slate-200 flex items-center gap-1.5 transition-all">
+            <button id="sched-view-board-btn" onclick="toggleScheduleView('board')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-900 border border-slate-300 flex items-center gap-1.5 transition-all cursor-pointer">
               <i data-lucide="kanban" class="w-3.5 h-3.5"></i> Papan Status (Board)
             </button>
-            <button id="sched-view-table-btn" onclick="toggleScheduleView('table')" class="px-3 py-1.5 rounded-lg text-xs font-medium text-notion-muted hover:text-notion-text hover:bg-notion-sidebar flex items-center gap-1.5 transition-all">
+            <button id="sched-view-table-btn" onclick="toggleScheduleView('table')" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center gap-1.5 transition-all cursor-pointer">
               <i data-lucide="table-2" class="w-3.5 h-3.5"></i> Daftar Tabel (List)
             </button>
           </div>
 
           <!-- Schedule Stats pill -->
-          <div class="flex items-center gap-3 text-xs font-medium text-slate-500">
-            <span class="flex items-center gap-1.5">
+          <div class="flex items-center gap-2.5 text-xs font-medium text-slate-500">
+            <span class="flex items-center gap-1">
               <span class="w-2 h-2 rounded-full bg-amber-500"></span>
               <span id="sched-count-todo">0 Rencana</span>
             </span>
-            <span class="flex items-center gap-1.5">
+            <span class="flex items-center gap-1">
               <span class="w-2 h-2 rounded-full bg-sky-500"></span>
-              <span id="sched-count-inprogress">0 Sedang Berjalan</span>
+              <span id="sched-count-inprogress">0 Berjalan</span>
             </span>
-            <span class="flex items-center gap-1.5">
+            <span class="flex items-center gap-1">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
               <span id="sched-count-done">0 Selesai</span>
             </span>
@@ -1068,59 +1067,79 @@
             </p>
           </div>
 
-          <!-- FORM LOGIN PORTAL: NAMA / ACCOUNT + PASSWORD -->
-          <div class="bg-amber-50/30 rounded-2xl p-5 sm:p-6 border border-amber-100/90 text-left space-y-4 shadow-2xs">
+          <!-- FORM LOGIN PORTAL: AKUN GOOGLE & PASSWORD -->
+          <div class="bg-slate-50/80 rounded-2xl p-5 sm:p-6 border border-slate-200 text-left space-y-4 shadow-2xs">
             <form id="form-account-login" onsubmit="handleAccountPasswordLogin(event)" class="space-y-3.5">
-              <!-- 1. Input Nama / Account -->
+              <!-- 1. Input Akun Google / Email -->
               <div>
-                <label for="loginAccountInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                  <i data-lucide="user" class="w-3.5 h-3.5 text-amber-700"></i>
-                  <span>Nama atau Account</span>
+                <label for="loginAccountInput" class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5">
+                    <i data-lucide="mail" class="w-3.5 h-3.5 text-slate-900"></i>
+                    <span>Akun Google (Email)</span>
+                  </span>
+                  <span class="text-[10px] text-slate-400 font-normal">Wajib diisi</span>
                 </label>
                 <div class="relative">
-                  <input type="text" id="loginAccountInput" placeholder="Ketik nama atau akun Anda (cth: Harits)" required class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm font-medium text-slate-800 bg-white placeholder-slate-400 transition-all shadow-2xs" value="Harits" />
+                  <input type="text" id="loginAccountInput" placeholder="contoh: nama@gmail.com" required autocomplete="email" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:border-black focus:ring-2 focus:ring-slate-900/10 text-sm font-medium text-slate-900 bg-white placeholder-slate-400 transition-all shadow-2xs" />
                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <i data-lucide="user" class="w-4 h-4"></i>
+                    <i data-lucide="mail" class="w-4 h-4"></i>
                   </div>
                 </div>
               </div>
 
               <!-- 2. Input Password -->
               <div>
-                <label for="loginPasswordInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+                <label for="loginPasswordInput" class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1 flex items-center justify-between">
                   <span class="flex items-center gap-1.5">
-                    <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-700"></i>
+                    <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-900"></i>
                     <span>Password / Kata Sandi</span>
                   </span>
-                  <span class="text-[10px] font-normal text-slate-400">Ketik kata sandi Anda</span>
+                  <span class="text-[10px] text-slate-400 font-normal">Wajib diisi</span>
                 </label>
                 <div class="relative">
-                  <input type="password" id="loginPasswordInput" placeholder="Masukkan password akun..." class="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm font-medium text-slate-800 bg-white placeholder-slate-400 transition-all shadow-2xs" value="123456" />
+                  <input type="password" id="loginPasswordInput" placeholder="Masukkan password akun..." required autocomplete="current-password" class="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-300 focus:outline-none focus:border-black focus:ring-2 focus:ring-slate-900/10 text-sm font-medium text-slate-900 bg-white placeholder-slate-400 transition-all shadow-2xs" />
                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <i data-lucide="lock" class="w-4 h-4"></i>
                   </div>
-                  <button type="button" onclick="toggleLoginPasswordVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer" title="Lihat/Sembunyikan password">
+                  <button type="button" onclick="toggleLoginPasswordVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer" title="Lihat/Sembunyikan password">
                     <i id="loginPasswordEyeIcon" data-lucide="eye" class="w-4 h-4"></i>
                   </button>
                 </div>
               </div>
 
-              <!-- 3. Tombol Submit: Langsung Buka Dashboard -->
-              <button type="submit" id="btnSubmitLogin" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 active:scale-98 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer mt-1">
+              <!-- 3. Helper Lupa Password ke WhatsApp -->
+              <div class="flex items-center justify-between text-xs pt-1">
+                <span class="text-[11px] text-slate-400">Tersinkron otomatis</span>
+                <a href="https://wa.me/6285711092611?text=Halo%20Admin%20Perpustakaan%20Mandiri%2C%20saya%20lupa%20nama%20akun%20atau%20password%20saya.%20Mohon%20bantuan%20kirimkan%20ulang%20informasi%20akun%20saya." target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-slate-900 hover:text-emerald-700 hover:underline flex items-center gap-1 cursor-pointer transition-colors" title="Hubungi WhatsApp Admin jika lupa nama akun atau password">
+                  <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                  <span>Lupa Akun / Password?</span>
+                </a>
+              </div>
+
+              <!-- 4. Tombol Submit: Langsung Buka Dashboard -->
+              <button type="submit" id="btnSubmitLogin" class="w-full py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-black active:scale-98 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer mt-1">
                 <i data-lucide="log-in" class="w-4 h-4"></i>
                 <span>Buka & Masuk ke Dashboard</span>
               </button>
             </form>
 
-            <!-- 4. Opsi Skip (Boleh Skip, di dashboard TIDAK ADA nama akun) -->
-            <div class="pt-3 text-center border-t border-slate-200/60">
-              <button onclick="skipLoginToDashboard()" id="btnSkipLogin" class="text-xs sm:text-sm font-bold text-slate-600 hover:text-amber-900 transition-colors py-1.5 px-3 rounded-xl hover:bg-amber-100/60 inline-flex items-center gap-1.5 cursor-pointer">
-                <span>Lewati & Masuk tanpa Akun</span>
-                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-              </button>
-              <p class="text-[11px] text-slate-400 mt-0.5">
-                (Boleh lewati: masuk langsung, tanpa memunculkan nama akun di dashboard)
-              </p>
+            <!-- 5. Opsi Skip & Hubungi WhatsApp -->
+            <div class="pt-3 text-center border-t border-slate-200/80 space-y-2">
+              <div>
+                <button onclick="skipLoginToDashboard()" id="btnSkipLogin" class="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors py-1 px-3 rounded-xl hover:bg-slate-200 inline-flex items-center gap-1.5 cursor-pointer">
+                  <span>Lewati & Masuk tanpa Akun</span>
+                  <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+                <p class="text-[11px] text-slate-400 mt-0.5">
+                  (Boleh lewati: masuk langsung, tanpa memunculkan nama akun di dashboard)
+                </p>
+              </div>
+              <div class="pt-1">
+                <a href="https://wa.me/6285711092611?text=Halo%20Admin%20Perpustakaan%20Mandiri%2C%20saya%20ingin%20menanyakan%20akun%20saya." target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-[11px] text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-full font-semibold transition-all">
+                  <i data-lucide="phone" class="w-3 h-3 text-emerald-600"></i>
+                  <span>Bantuan WhatsApp: 085711092611</span>
+                </a>
+              </div>
             </div>
           </div>
 
@@ -1834,6 +1853,6 @@
   <div id="toast-container" class="fixed bottom-20 md:bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- JavaScript Modules with Cache Busting Version -->
-  <script src="app.js?v=3.3.2"></script>
+  <script src="app.js?v=3.3.3"></script>
 </body>
 </html>

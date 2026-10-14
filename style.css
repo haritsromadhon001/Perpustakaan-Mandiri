@@ -139,14 +139,27 @@ body {
 }
 
 /* ==========================================================
-   TEMA WARNA NYAMAN DI MATA (EYE-COMFORT THEMES)
-   1. Krem Kertas Alami (Default Parchment)
-   2. Hijau Sage Lembut (Sage Calm)
-   3. Kopi Hangat Sepia (Warm Mocha)
-   4. Mode Malam Teduh (Soft Slate Dark)
+   TEMA WARNA PERPUSTAKAAN MANDIRI
+   1. Hitam dan Putih (Default Monochrome / Notion Aesthetic)
+   2. Mode Malam Teduh (OLED Dark)
+   3. Krem Kertas Alami (Parchment Warm)
+   4. Hijau Sage Lembut (Sage Calm)
+   5. Kopi Hangat Sepia (Warm Mocha)
    ========================================================== */
 
 :root,
+[data-theme="monochrome"] {
+  --bg-app: #ffffff;
+  --bg-card: #ffffff;
+  --bg-subtle: #f8fafc;
+  --border-color: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --accent-primary: #0f172a;
+  --accent-hover: #000000;
+  --accent-light: #f1f5f9;
+}
+
 [data-theme="parchment"] {
   --bg-app: #fcf9f2;
   --bg-card: #ffffff;
@@ -280,4 +293,43 @@ body {
 .quote-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+}
+
+/* Monochrome Black & White Theme Overrides */
+[data-theme="monochrome"] .bg-amber-700,
+[data-theme="monochrome"] .hover\:bg-amber-800:hover {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+[data-theme="monochrome"] .text-amber-900,
+[data-theme="monochrome"] .text-amber-800,
+[data-theme="monochrome"] .text-amber-700 {
+  color: #0f172a !important;
+}
+
+[data-theme="monochrome"] .border-amber-200,
+[data-theme="monochrome"] .border-amber-200\/80,
+[data-theme="monochrome"] .border-amber-200\/50,
+[data-theme="monochrome"] .border-amber-200\/60,
+[data-theme="monochrome"] .border-amber-100 {
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="monochrome"] .bg-amber-50,
+[data-theme="monochrome"] .bg-amber-50\/50,
+[data-theme="monochrome"] .bg-amber-50\/70,
+[data-theme="monochrome"] .bg-amber-50\/30,
+[data-theme="monochrome"] .bg-amber-50\/40,
+[data-theme="monochrome"] .bg-amber-100 {
+  background-color: #f8fafc !important;
+}
+
+[data-theme="monochrome"] .nav-tab.active {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+[data-theme="monochrome"] .nav-tab.active i {
+  color: #ffffff !important;
 }

