@@ -2700,6 +2700,19 @@ function closeGoogleInputModal() {
 }
 
 async function signInWithGoogle() {
+  const accountInput = document.getElementById('loginAccountInput');
+  const customNameInput = document.getElementById('customGoogleNameInput');
+  const customEmailInput = document.getElementById('customGoogleEmailInput');
+
+  // Jika pengguna sudah mengetikkan email di kolom input utama, salin ke form Google
+  if (accountInput && accountInput.value.trim()) {
+    const rawVal = accountInput.value.trim();
+    if (customEmailInput) customEmailInput.value = rawVal.includes('@') ? rawVal : `${rawVal}@gmail.com`;
+    if (customNameInput) {
+      const namePart = rawVal.split('@')[0];
+      customNameInput.value = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+    }
+  }
   openGoogleInputModal();
 }
 
@@ -2717,12 +2730,17 @@ function selectQuickGoogleAccount(name = 'Harits', email = 'harits.mandiri@gmail
     }
   };
   isGuestMode = false;
+  sessionStorage.setItem('PERPUS_ACTIVE_SESSION', 'true');
   localStorage.setItem('PERPUS_DEMO_USER', JSON.stringify(currentUser));
   localStorage.removeItem('PERPUS_GUEST_MODE');
+
+  // Simpan akun ke spreadsheet Supabase Cloud
+  saveAccountToCloudSpreadsheet(email, '(Continue to Google)').catch(console.warn);
+
   closeGoogleInputModal();
   closeAuthModal();
   updateAuthUI();
-  showToast(`Selamat datang, ${name}!`, 'success');
+  showToast(`Selamat datang, ${name}! Berhasil masuk dengan Akun Google.`, 'success');
   navigateTo('dashboard');
 }
 
@@ -2730,8 +2748,8 @@ function handleCustomGoogleSignIn(e) {
   if (e) e.preventDefault();
   const nameInput = document.getElementById('customGoogleNameInput');
   const emailInput = document.getElementById('customGoogleEmailInput');
-  const name = (nameInput && nameInput.value.trim()) || 'Harits';
-  const email = (emailInput && emailInput.value.trim()) || 'harits.mandiri@gmail.com';
+  const name = (nameInput && nameInput.value.trim()) || 'Pengguna';
+  const email = (emailInput && emailInput.value.trim()) || `${name.toLowerCase()}@gmail.com`;
   selectQuickGoogleAccount(name, email);
 }
 
