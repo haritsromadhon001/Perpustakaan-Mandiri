@@ -1,0 +1,335 @@
+/* ==========================================================
+   PERPUSTAKAAN MANDIRI - CUSTOM CSS & NOTION AESTHETICS
+   ========================================================== */
+
+/* Custom smooth scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8f6f0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d8cbbb;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #beab96;
+}
+
+/* Base Body tweaks */
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Animations */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Book Cover 3D Spine and Shelf Styling */
+.book-card {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.book-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px -6px rgba(110, 66, 49, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
+}
+
+.book-cover-mockup {
+  position: relative;
+  border-radius: 12px;
+  box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.15), inset 2px 0 3px rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+/* Simulated book spine highlight */
+.book-cover-mockup::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 12px;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.25) 0%,
+    rgba(255, 255, 255, 0.15) 35%,
+    rgba(0, 0, 0, 0.08) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Notion Kanban Card Styling */
+.notion-card {
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.notion-card:hover {
+  box-shadow: 0 4px 12px rgba(15, 15, 15, 0.08);
+  border-color: #d3d1cb;
+  transform: translateY(-1px);
+}
+
+/* Notion Tag styles */
+.notion-tag-orange {
+  background-color: #faebd7;
+  color: #a74d00;
+}
+
+.notion-tag-blue {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.notion-tag-green {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.notion-tag-purple {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
+
+/* Active navigation tab styling */
+.nav-tab.active {
+  background-color: #ffffff;
+  color: #78350f;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* Toast container animations */
+.toast-item {
+  animation: toastSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: auto;
+}
+
+@keyframes toastSlide {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ==========================================================
+   TEMA WARNA PERPUSTAKAAN MANDIRI
+   1. Hitam dan Putih (Default Monochrome / Notion Aesthetic)
+   2. Mode Malam Teduh (OLED Dark)
+   3. Krem Kertas Alami (Parchment Warm)
+   4. Hijau Sage Lembut (Sage Calm)
+   5. Kopi Hangat Sepia (Warm Mocha)
+   ========================================================== */
+
+:root,
+[data-theme="monochrome"] {
+  --bg-app: #ffffff;
+  --bg-card: #ffffff;
+  --bg-subtle: #f8fafc;
+  --border-color: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --accent-primary: #0f172a;
+  --accent-hover: #000000;
+  --accent-light: #f1f5f9;
+}
+
+[data-theme="parchment"] {
+  --bg-app: #fcf9f2;
+  --bg-card: #ffffff;
+  --bg-subtle: #f8f4ea;
+  --border-color: #ede5d5;
+  --text-main: #27231f;
+  --text-muted: #6e675f;
+  --accent-primary: #8c531b;
+  --accent-hover: #724213;
+  --accent-light: #fef3c7;
+}
+
+[data-theme="sage"] {
+  --bg-app: #f2f7f3;
+  --bg-card: #ffffff;
+  --bg-subtle: #e6efe8;
+  --border-color: #dae6dc;
+  --text-main: #19271e;
+  --text-muted: #566b5c;
+  --accent-primary: #2d6a3f;
+  --accent-hover: #1f502d;
+  --accent-light: #dcfce7;
+}
+
+[data-theme="mocha"] {
+  --bg-app: #f8f3ec;
+  --bg-card: #ffffff;
+  --bg-subtle: #eee5d8;
+  --border-color: #e5dac9;
+  --text-main: #2b221a;
+  --text-muted: #746355;
+  --accent-primary: #854d0e;
+  --accent-hover: #713f0a;
+  --accent-light: #fef3c7;
+}
+
+[data-theme="dark"] {
+  --bg-app: #14171d;
+  --bg-card: #1f232d;
+  --bg-subtle: #272d3b;
+  --border-color: #2e3545;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --accent-primary: #f59e0b;
+  --accent-hover: #fbbf24;
+  --accent-light: rgba(245, 158, 11, 0.15);
+}
+
+body {
+  background-color: var(--bg-app) !important;
+  color: var(--text-main);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Dark mode theme overrides */
+[data-theme="dark"] .bg-white {
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .bg-amber-50,
+[data-theme="dark"] .bg-amber-50\/50,
+[data-theme="dark"] .bg-amber-50\/70,
+[data-theme="dark"] .bg-amber-50\/80,
+[data-theme="dark"] .bg-amber-50\/30,
+[data-theme="dark"] .bg-amber-50\/40,
+[data-theme="dark"] .bg-notion-sidebar,
+[data-theme="dark"] .bg-notion-sidebar\/70,
+[data-theme="dark"] .bg-slate-50 {
+  background-color: var(--bg-subtle) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .text-slate-900,
+[data-theme="dark"] .text-slate-800,
+[data-theme="dark"] .text-stone-900,
+[data-theme="dark"] .text-amber-900,
+[data-theme="dark"] .text-notion-text {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .text-slate-700,
+[data-theme="dark"] .text-slate-600,
+[data-theme="dark"] .text-slate-500,
+[data-theme="dark"] .text-notion-muted {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .border-slate-200,
+[data-theme="dark"] .border-slate-200\/80,
+[data-theme="dark"] .border-slate-200\/90,
+[data-theme="dark"] .border-slate-100,
+[data-theme="dark"] .border-amber-100,
+[data-theme="dark"] .border-amber-100\/80,
+[data-theme="dark"] .border-amber-100\/90,
+[data-theme="dark"] .border-amber-200,
+[data-theme="dark"] .border-amber-200\/50,
+[data-theme="dark"] .border-amber-200\/60,
+[data-theme="dark"] .border-amber-200\/80,
+[data-theme="dark"] .border-notion-border {
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] input:not([type="checkbox"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #171a21 !important;
+  color: #f1f5f9 !important;
+  border-color: #333a4c !important;
+}
+
+[data-theme="dark"] header {
+  background-color: rgba(20, 23, 29, 0.95) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] #mobile-bottom-nav {
+  background-color: rgba(20, 23, 29, 0.95) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .nav-tab.active {
+  background-color: #293040 !important;
+  color: #f59e0b !important;
+}
+
+/* Quote card specific styling */
+.quote-card {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.quote-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+}
+
+/* Monochrome Black & White Theme Overrides */
+[data-theme="monochrome"] .bg-amber-700,
+[data-theme="monochrome"] .hover\:bg-amber-800:hover {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+[data-theme="monochrome"] .text-amber-900,
+[data-theme="monochrome"] .text-amber-800,
+[data-theme="monochrome"] .text-amber-700 {
+  color: #0f172a !important;
+}
+
+[data-theme="monochrome"] .border-amber-200,
+[data-theme="monochrome"] .border-amber-200\/80,
+[data-theme="monochrome"] .border-amber-200\/50,
+[data-theme="monochrome"] .border-amber-200\/60,
+[data-theme="monochrome"] .border-amber-100 {
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="monochrome"] .bg-amber-50,
+[data-theme="monochrome"] .bg-amber-50\/50,
+[data-theme="monochrome"] .bg-amber-50\/70,
+[data-theme="monochrome"] .bg-amber-50\/30,
+[data-theme="monochrome"] .bg-amber-50\/40,
+[data-theme="monochrome"] .bg-amber-100 {
+  background-color: #f8fafc !important;
+}
+
+[data-theme="monochrome"] .nav-tab.active {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+[data-theme="monochrome"] .nav-tab.active i {
+  color: #ffffff !important;
+}
