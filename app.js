@@ -1307,6 +1307,7 @@ function initTheme() {
 function applyTheme(themeName, showToastMsg = true) {
   currentTheme = themeName;
   document.documentElement.setAttribute('data-theme', themeName);
+  document.documentElement.classList.toggle('dark', themeName === 'dark');
   localStorage.setItem('PERPUS_THEME', themeName);
 
   // Update checkmarks
