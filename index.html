@@ -135,7 +135,88 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Custom Styles with Cache Busting -->
-  <link rel="stylesheet" href="style.css?v=3.3.6" />
+  <link rel="stylesheet" href="style.css?v=3.3.7" />
+
+  <!-- Critical Embedded Dark Mode & High-Contrast Styles (Instant rendering without cache delay) -->
+  <style id="dark-theme-critical-styles">
+    [data-theme="dark"], html.dark { color-scheme: dark; }
+    [data-theme="dark"] body, html.dark body { background-color: #14171d !important; color: #f1f5f9 !important; }
+    [data-theme="dark"] .bg-white, html.dark .bg-white { background-color: #1f232d !important; color: #f1f5f9 !important; }
+    [data-theme="dark"] .bg-slate-50, [data-theme="dark"] .bg-slate-50\/80, [data-theme="dark"] .bg-notion-sidebar, [data-theme="dark"] .bg-notion-sidebar\/70, html.dark .bg-slate-50 { background-color: #272d3b !important; color: #f1f5f9 !important; }
+    [data-theme="dark"] .bg-slate-100, [data-theme="dark"] .hover\:bg-slate-100:hover, html.dark .bg-slate-100 { background-color: #272d3b !important; color: #f1f5f9 !important; }
+    [data-theme="dark"] .bg-slate-200, [data-theme="dark"] .hover\:bg-slate-200:hover, html.dark .bg-slate-200 { background-color: #323a4c !important; color: #f1f5f9 !important; }
+    
+    /* Top Bar Theme Switcher Button */
+    [data-theme="dark"] #themeBtn, html.dark #themeBtn { background-color: #272d3b !important; color: #f8fafc !important; border-color: #3e485e !important; }
+    [data-theme="dark"] #themeBtn:hover, html.dark #themeBtn:hover { background-color: #333a4c !important; color: #ffffff !important; }
+    [data-theme="dark"] #themeBtn *, html.dark #themeBtn * { color: #f8fafc !important; }
+    [data-theme="dark"] #themeDropdownMenu, [data-theme="dark"] #desktopUserDropdown { background-color: #1f232d !important; border-color: #2e3545 !important; }
+    [data-theme="dark"] #themeDropdownMenu button:hover, [data-theme="dark"] #desktopUserDropdown button:hover { background-color: #272d3b !important; }
+    
+    /* User Badge & Amber Pills */
+    [data-theme="dark"] .bg-amber-100, [data-theme="dark"] #dashboardUserBadge, html.dark .bg-amber-100, html.dark #dashboardUserBadge { background-color: rgba(245, 158, 11, 0.22) !important; color: #fbbf24 !important; border-color: rgba(245, 158, 11, 0.4) !important; }
+    [data-theme="dark"] .bg-amber-100 *, [data-theme="dark"] #dashboardUserBadge *, html.dark .bg-amber-100 *, html.dark #dashboardUserBadge * { color: #fbbf24 !important; }
+    
+    /* Emerald & Sky & Violet & Rose Badges */
+    [data-theme="dark"] .bg-emerald-100, html.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.22) !important; color: #34d399 !important; border-color: rgba(16, 185, 129, 0.4) !important; }
+    [data-theme="dark"] .bg-emerald-100 *, html.dark .bg-emerald-100 * { color: #34d399 !important; }
+    [data-theme="dark"] .bg-sky-100, html.dark .bg-sky-100 { background-color: rgba(14, 165, 233, 0.22) !important; color: #38bdf8 !important; border-color: rgba(14, 165, 233, 0.4) !important; }
+    [data-theme="dark"] .bg-sky-100 *, html.dark .bg-sky-100 * { color: #38bdf8 !important; }
+    [data-theme="dark"] .bg-violet-100, [data-theme="dark"] .bg-purple-100, html.dark .bg-violet-100 { background-color: rgba(168, 85, 247, 0.22) !important; color: #c084fc !important; border-color: rgba(168, 85, 247, 0.4) !important; }
+    [data-theme="dark"] .bg-violet-100 *, html.dark .bg-violet-100 * { color: #c084fc !important; }
+    [data-theme="dark"] .bg-rose-100, html.dark .bg-rose-100 { background-color: rgba(244, 63, 94, 0.22) !important; color: #fb7185 !important; border-color: rgba(244, 63, 94, 0.4) !important; }
+    [data-theme="dark"] .bg-rose-100 *, html.dark .bg-rose-100 * { color: #fb7185 !important; }
+
+    /* Soft cards & quote blocks */
+    [data-theme="dark"] .bg-amber-50, [data-theme="dark"] [class*="bg-amber-50/"], [data-theme="dark"] .bg-emerald-50, [data-theme="dark"] [class*="bg-emerald-50/"], [data-theme="dark"] .bg-sky-50, [data-theme="dark"] [class*="bg-sky-50/"], [data-theme="dark"] .bg-rose-50, [data-theme="dark"] [class*="bg-rose-50/"], [data-theme="dark"] .bg-purple-50, [data-theme="dark"] [class*="bg-purple-50/"] { background-color: #272d3b !important; color: #f1f5f9 !important; border-color: #2e3545 !important; }
+
+    /* Typography */
+    [data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, [data-theme="dark"] h4, [data-theme="dark"] h5, [data-theme="dark"] h6, [data-theme="dark"] .text-slate-900, [data-theme="dark"] .text-slate-800, [data-theme="dark"] .text-stone-900, html.dark h1, html.dark h2, html.dark h3, html.dark .text-slate-900, html.dark .text-slate-800 { color: #f8fafc !important; }
+    [data-theme="dark"] .text-slate-700, [data-theme="dark"] label, html.dark .text-slate-700 { color: #e2e8f0 !important; }
+    [data-theme="dark"] .text-slate-600, html.dark .text-slate-600 { color: #cbd5e1 !important; }
+    [data-theme="dark"] .text-slate-500, [data-theme="dark"] .text-slate-400, [data-theme="dark"] .text-notion-muted, html.dark .text-slate-500, html.dark .text-slate-400 { color: #94a3b8 !important; }
+
+    /* Stat Numbers & Highlights */
+    [data-theme="dark"] .text-emerald-900, [data-theme="dark"] .text-emerald-800, [data-theme="dark"] .text-emerald-700, [data-theme="dark"] .text-emerald-600, [data-theme="dark"] #stat-keagamaan-books, [data-theme="dark"] #evalCountDone, [data-theme="dark"] #evalFullPages, [data-theme="dark"] #stat-completed-percent, html.dark #stat-keagamaan-books { color: #34d399 !important; }
+    [data-theme="dark"] .text-sky-900, [data-theme="dark"] .text-sky-800, [data-theme="dark"] .text-sky-700, [data-theme="dark"] .text-sky-600, [data-theme="dark"] #stat-network-books, [data-theme="dark"] #evalPercentRatio, [data-theme="dark"] #evalFullDiscipline, html.dark #stat-network-books { color: #38bdf8 !important; }
+    [data-theme="dark"] .text-violet-900, [data-theme="dark"] .text-violet-800, [data-theme="dark"] .text-purple-900, [data-theme="dark"] #stat-pdf-books, html.dark #stat-pdf-books { color: #c084fc !important; }
+    [data-theme="dark"] .text-amber-900:not(.bg-amber-100 *), [data-theme="dark"] .text-amber-800, [data-theme="dark"] .text-amber-700, [data-theme="dark"] .text-amber-600, [data-theme="dark"] #evalCountUnread, [data-theme="dark"] #evalFullPercent, html.dark #evalCountUnread { color: #fbbf24 !important; }
+    [data-theme="dark"] .text-rose-900, [data-theme="dark"] .text-rose-800, [data-theme="dark"] .text-rose-700 { color: #fb7185 !important; }
+
+    /* Active status pill badge count */
+    .bg-amber-700 #badge-count-unread, .bg-amber-700 #badge-count-completed, .bg-amber-700 #badge-count-all, [data-theme="dark"] .bg-amber-700 #badge-count-unread, [data-theme="dark"] .bg-amber-700 #badge-count-completed, [data-theme="dark"] .bg-amber-700 #badge-count-all { background-color: rgba(0, 0, 0, 0.35) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.25) !important; }
+
+    /* Category Filter Tabs */
+    [data-theme="dark"] .cat-pill:not(.bg-amber-700), html.dark .cat-pill:not(.bg-amber-700) { background-color: transparent !important; color: #cbd5e1 !important; }
+    [data-theme="dark"] .cat-pill:not(.bg-amber-700):hover, html.dark .cat-pill:not(.bg-amber-700):hover { background-color: #272d3b !important; color: #ffffff !important; }
+    [data-theme="dark"] .cat-pill:not(.bg-amber-700) span, html.dark .cat-pill:not(.bg-amber-700) span { color: #fbbf24 !important; }
+
+    /* Layout Switcher */
+    [data-theme="dark"] #layout-grid-btn, [data-theme="dark"] #layout-dual-btn { color: #cbd5e1 !important; }
+    [data-theme="dark"] #layout-grid-btn.bg-white, [data-theme="dark"] #layout-dual-btn.bg-white { background-color: #323a4c !important; color: #ffffff !important; }
+    [data-theme="dark"] #layout-grid-btn.bg-white span, [data-theme="dark"] #layout-dual-btn.bg-white span { color: #ffffff !important; }
+    [data-theme="dark"] #layout-grid-btn i, [data-theme="dark"] #layout-dual-btn i { color: #fbbf24 !important; }
+
+    /* Inactive Status Tabs */
+    [data-theme="dark"] #status-pill-unread:not(.bg-amber-700), [data-theme="dark"] #status-pill-completed:not(.bg-amber-700) { background-color: #1f232d !important; color: #cbd5e1 !important; }
+    [data-theme="dark"] #status-pill-unread:not(.bg-amber-700):hover, [data-theme="dark"] #status-pill-completed:not(.bg-amber-700):hover { background-color: #272d3b !important; color: #ffffff !important; }
+
+    /* Quote Cards */
+    [data-theme="dark"] .quote-card { background-color: #1f232d !important; border-color: #2e3545 !important; }
+    [data-theme="dark"] .quote-card h4 { color: #f8fafc !important; }
+    [data-theme="dark"] .quote-card p { color: #cbd5e1 !important; }
+    [data-theme="dark"] .quote-card blockquote { background-color: #171a21 !important; color: #f8fafc !important; border-color: #2e3545 !important; }
+    [data-theme="dark"] .quote-card strong, [data-theme="dark"] .quote-card button { color: #fbbf24 !important; }
+
+    /* Header, Mobile Bottom Nav & Borders */
+    [data-theme="dark"] header, html.dark header { background-color: rgba(20, 23, 29, 0.95) !important; border-color: #2e3545 !important; }
+    [data-theme="dark"] #mobile-bottom-nav, html.dark #mobile-bottom-nav { background-color: rgba(20, 23, 29, 0.96) !important; border-color: #2e3545 !important; }
+    [data-theme="dark"] #mobile-bottom-nav button { color: #94a3b8 !important; }
+    [data-theme="dark"] #mobile-bottom-nav button.active, [data-theme="dark"] #mobile-bottom-nav .text-amber-900 { color: #fbbf24 !important; }
+    [data-theme="dark"] [class*="border-slate-"], [data-theme="dark"] [class*="border-amber-"], [data-theme="dark"] [class*="border-emerald-"], [data-theme="dark"] [class*="border-sky-"], [data-theme="dark"] .border-notion-border { border-color: #2e3545 !important; }
+    [data-theme="dark"] input:not([type="checkbox"]), [data-theme="dark"] select, [data-theme="dark"] textarea { background-color: #171a21 !important; color: #f1f5f9 !important; border-color: #333a4c !important; }
+    [data-theme="dark"] input::placeholder, [data-theme="dark"] textarea::placeholder { color: #94a3b8 !important; }
+  </style>
 </head>
 <body class="bg-[#fcfaf7] text-slate-800 antialiased font-sans min-h-screen flex flex-col selection:bg-amber-200 selection:text-amber-900">
 
