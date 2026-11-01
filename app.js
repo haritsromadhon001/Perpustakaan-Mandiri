@@ -960,16 +960,18 @@ async function renderDashboardView(forceRefresh = false) {
       });
 
       if (folderFiltered.length === 0) {
+        const folderCat = folderAllBooks[0]?.category || (selectedCategory === 'all' ? 'Network Engineer' : selectedCategory);
+        const folderMeta = getFolderCategoryMeta(folderCat);
         container.innerHTML = `
-          <div class="col-span-full py-12 text-center bg-white rounded-3xl border border-dashed border-emerald-200 p-6">
-            <p class="text-xs text-slate-500 mb-4">Tidak ada jilid yang sesuai dengan pencarian atau filter status ini.</p>
-            <button onclick="openAddBookToFolder('${encodeURIComponent(activeFolder)}', '${encodeURIComponent(folderAllBooks[0]?.category || 'Keagamaan')}', '${encodeURIComponent(folderAllBooks[0]?.author || '')}')" class="px-4 py-2 rounded-xl bg-emerald-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer">
-              <i data-lucide="plus" class="w-4 h-4"></i> Tambah Jilid Baru
+          <div class="col-span-full py-12 text-center bg-white rounded-3xl border border-dashed border-slate-200 p-6">
+            <p class="text-xs text-slate-500 mb-4">Tidak ada buku/jilid yang sesuai dengan pencarian atau filter status ini.</p>
+            <button onclick="openAddBookToFolder('${encodeURIComponent(activeFolder)}', '${encodeURIComponent(folderCat)}', '${encodeURIComponent(folderAllBooks[0]?.author || '')}')" class="px-4 py-2 rounded-xl ${folderMeta.primaryBtnClass} font-semibold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer">
+              <i data-lucide="plus" class="w-4 h-4"></i> Tambah ${folderMeta.volPrefix} Baru
             </button>
           </div>
         `;
-        if (dualUnreadList) dualUnreadList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-amber-200">Tidak ada jilid dalam daftar ini.</p>`;
-        if (dualCompletedList) dualCompletedList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-emerald-200">Tidak ada jilid dalam daftar ini.</p>`;
+        if (dualUnreadList) dualUnreadList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-amber-200">Tidak ada item dalam daftar ini.</p>`;
+        if (dualCompletedList) dualCompletedList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-slate-200">Tidak ada item dalam daftar ini.</p>`;
         emptyState.classList.add('hidden');
         lucide.createIcons();
         return;
@@ -1296,8 +1298,57 @@ function createDualBookCardHTML(book) {
 }
 
 // ==============================================================================
-// 4.1 FOLDER & KITAB BERJILID COMPONENTS & HANDLERS
+// 4.1 FOLDER & KOLEKSI BUKU BERSERI / BERJILID (SEMUA KATEGORI)
 // ==============================================================================
+
+function getFolderCategoryMeta(category) {
+  if (category === 'Network Engineer') {
+    return {
+      nameBadge: 'Seri Network / Koleksi',
+      unit: 'Buku',
+      volPrefix: 'Vol',
+      icon: 'layers',
+      themeGradient: 'from-sky-900 via-slate-900 to-slate-950',
+      badgeBorder: 'border-sky-500/40 hover:border-sky-500',
+      headerGradient: 'from-sky-900 via-slate-950 to-slate-900 border-sky-700/40',
+      categoryBadgeClass: 'bg-sky-100 text-sky-800 border-sky-200',
+      primaryBtnClass: 'bg-sky-700 hover:bg-sky-800 text-white',
+      cardBorder: 'border-sky-100/90 hover:border-sky-300',
+      subtextClass: 'text-sky-200',
+      progressClass: 'from-sky-600 to-cyan-600'
+    };
+  }
+  if (category === 'Keagamaan') {
+    return {
+      nameBadge: 'Seri Kitab Berjilid',
+      unit: 'Jilid',
+      volPrefix: 'Jilid',
+      icon: 'folder-archive',
+      themeGradient: 'from-emerald-800 via-teal-900 to-slate-950',
+      badgeBorder: 'border-emerald-500/40 hover:border-emerald-500',
+      headerGradient: 'from-emerald-900 via-teal-950 to-slate-900 border-emerald-700/40',
+      categoryBadgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      primaryBtnClass: 'bg-emerald-700 hover:bg-emerald-800 text-white',
+      cardBorder: 'border-emerald-100/90 hover:border-emerald-300',
+      subtextClass: 'text-emerald-200',
+      progressClass: 'from-emerald-600 to-teal-600'
+    };
+  }
+  return {
+    nameBadge: 'Seri Koleksi Buku',
+    unit: 'Buku',
+    volPrefix: 'Vol',
+    icon: 'folder',
+    themeGradient: 'from-amber-800 via-stone-900 to-slate-950',
+    badgeBorder: 'border-amber-500/40 hover:border-amber-500',
+    headerGradient: 'from-amber-950 via-stone-900 to-slate-900 border-amber-700/40',
+    categoryBadgeClass: 'bg-amber-100 text-amber-800 border-amber-200',
+    primaryBtnClass: 'bg-amber-700 hover:bg-amber-800 text-white',
+    cardBorder: 'border-amber-100/90 hover:border-amber-300',
+    subtextClass: 'text-amber-200',
+    progressClass: 'from-amber-600 to-orange-600'
+  };
+}
 
 function renderFolderViewHeader(folderName, folderBooks) {
   const container = document.getElementById('folder-view-header');
@@ -1312,7 +1363,8 @@ function renderFolderViewHeader(folderName, folderBooks) {
   container.classList.remove('hidden');
   const firstBook = folderBooks[0] || {};
   const author = firstBook.author || 'Anonim';
-  const category = firstBook.category || 'Keagamaan';
+  const category = firstBook.category || 'Network Engineer';
+  const meta = getFolderCategoryMeta(category);
   const totalVolumes = folderBooks.length;
   const completedCount = folderBooks.filter((b) => b.status === 'Selesai').length;
   const totalPages = folderBooks.reduce((sum, b) => sum + (b.totalPages || 0), 0);
@@ -1323,30 +1375,30 @@ function renderFolderViewHeader(folderName, folderBooks) {
   const encodedAuthor = encodeURIComponent(author);
 
   container.innerHTML = `
-    <div class="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl shadow-lg border border-emerald-700/40 relative overflow-hidden animate-scale-in">
+    <div class="bg-gradient-to-r ${meta.headerGradient} text-white p-5 sm:p-6 rounded-3xl shadow-lg relative overflow-hidden animate-scale-in">
       <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="space-y-2">
           <div class="flex items-center gap-2 text-xs">
-            <button onclick="closeFolderView()" class="hover:underline flex items-center gap-1.5 font-bold text-emerald-200 hover:text-white cursor-pointer transition-colors">
+            <button onclick="closeFolderView()" class="hover:underline flex items-center gap-1.5 font-bold ${meta.subtextClass} hover:text-white cursor-pointer transition-colors">
               <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Rak Utama
             </button>
             <span class="text-white/40">/</span>
-            <span class="px-2.5 py-0.5 rounded-full bg-emerald-800/80 text-emerald-100 text-[11px] font-bold border border-emerald-700/60">${escapeHTML(category)}</span>
+            <span class="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold border border-white/20">${escapeHTML(category)}</span>
           </div>
 
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-md shrink-0">
-              <i data-lucide="library" class="w-6 h-6"></i>
+              <i data-lucide="${meta.icon}" class="w-6 h-6"></i>
             </div>
             <div>
               <h2 class="text-xl sm:text-2xl font-bold font-serif text-white flex items-center gap-2 flex-wrap">
                 <span>${escapeHTML(folderName)}</span>
-                <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-100 border border-emerald-400/30 font-sans font-bold">
-                  ${totalVolumes} Jilid
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-white/20 text-white border border-white/30 font-sans font-bold">
+                  ${totalVolumes} ${meta.unit}
                 </span>
               </h2>
-              <p class="text-xs text-emerald-200/90 mt-0.5">
-                Karya: <strong class="text-white">${escapeHTML(author)}</strong> • Progres: <strong class="text-amber-300">${completedCount}/${totalVolumes} Jilid Selesai</strong> (${readPages}/${totalPages} Hal)
+              <p class="text-xs ${meta.subtextClass} mt-0.5">
+                Karya: <strong class="text-white">${escapeHTML(author)}</strong> • Progres: <strong class="text-amber-300">${completedCount}/${totalVolumes} ${meta.unit} Selesai</strong> (${readPages}/${totalPages} Hal)
               </p>
             </div>
           </div>
@@ -1354,7 +1406,7 @@ function renderFolderViewHeader(folderName, folderBooks) {
 
         <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button onclick="openAddBookToFolder('${encodedName}', '${encodedCat}', '${encodedAuthor}')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i> + Tambah Jilid Baru
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> + Tambah ${meta.volPrefix} Baru
           </button>
           <button onclick="confirmDeleteFolder('${encodedName}')" class="px-3.5 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-200 border border-red-500/30 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5" title="Hapus Seluruh Folder">
             <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -1372,91 +1424,83 @@ function renderFolderViewHeader(folderName, folderBooks) {
 function createFolderCardHTML(folder) {
   const isDone = folder.completedVolumes === folder.totalVolumes && folder.totalVolumes > 0;
   const progressPct = folder.totalVolumes > 0 ? Math.round((folder.completedVolumes / folder.totalVolumes) * 100) : 0;
-  const isKeagamaan = folder.category === 'Keagamaan';
+  const meta = getFolderCategoryMeta(folder.category);
   const encodedName = encodeURIComponent(folder.name);
   const encodedCat = encodeURIComponent(folder.category);
   const encodedAuthor = encodeURIComponent(folder.author);
 
-  const themeGradient = isKeagamaan
-    ? 'from-emerald-800 via-teal-900 to-slate-950'
-    : 'from-amber-800 via-stone-900 to-slate-950';
-
-  const badgeBorder = isKeagamaan
-    ? 'border-emerald-500/40 hover:border-emerald-500'
-    : 'border-amber-500/40 hover:border-amber-500';
-
   return `
-    <div class="folder-card bg-white rounded-2xl border-2 ${badgeBorder} p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-all group relative">
+    <div class="folder-card bg-white rounded-2xl border-2 ${meta.badgeBorder} p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-all group relative">
       <!-- 3D Stack Layer Simulation -->
       <div class="absolute -top-1.5 left-5 right-5 h-2 bg-slate-300 dark:bg-slate-700 rounded-t-xl -z-10 group-hover:-top-2 transition-all"></div>
       <div class="absolute -top-3 left-8 right-8 h-2 bg-slate-200 dark:bg-slate-800 rounded-t-xl -z-20 group-hover:-top-4 transition-all"></div>
 
       <div>
-        <div class="book-cover-mockup bg-gradient-to-br ${themeGradient} text-white p-4 h-48 flex flex-col justify-between relative shadow-md mb-4 group-hover:scale-[1.01] transition-transform cursor-pointer" onclick="openFolderView('${encodedName}')">
+        <div class="book-cover-mockup bg-gradient-to-br ${meta.themeGradient} text-white p-4 h-48 flex flex-col justify-between relative shadow-md mb-4 group-hover:scale-[1.01] transition-transform cursor-pointer" onclick="openFolderView('${encodedName}')">
           <div class="flex items-center justify-between text-xs z-10">
             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md bg-white/20 text-white border border-white/20">
-              <i data-lucide="folder-archive" class="w-3 h-3 text-amber-300"></i> Seri Kitab Berjilid
+              <i data-lucide="${meta.icon}" class="w-3 h-3 text-amber-300"></i> ${meta.nameBadge}
             </span>
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400 text-slate-950 flex items-center gap-1 shadow-sm">
-              <i data-lucide="library" class="w-3 h-3"></i> ${folder.totalVolumes} Jilid
+              <i data-lucide="library" class="w-3 h-3"></i> ${folder.totalVolumes} ${meta.unit}
             </span>
           </div>
 
           <div class="z-10 pl-2">
             <div class="flex items-center gap-1 text-[11px] text-amber-200 font-medium mb-1">
-              <i data-lucide="layers" class="w-3 h-3"></i> Koleksi Lengkap
+              <i data-lucide="layers" class="w-3 h-3"></i> Koleksi Bersambung
             </div>
             <h4 class="font-serif font-bold text-sm sm:text-base leading-snug line-clamp-2 text-white drop-shadow-sm">${escapeHTML(folder.name)}</h4>
             <p class="text-[11px] text-white/80 mt-1 line-clamp-1 italic">${escapeHTML(folder.author || 'Anonim')}</p>
           </div>
 
           <div class="z-10 flex items-center justify-between text-[10px] text-white/80 pl-2 border-t border-white/15 pt-2">
-            <span>${folder.totalVolumes} Jilid Terdaftar</span>
+            <span>${folder.totalVolumes} ${meta.unit} Terdaftar</span>
             <span class="font-semibold text-amber-300">${folder.completedVolumes}/${folder.totalVolumes} Selesai</span>
           </div>
         </div>
 
         <div class="space-y-2">
           <div class="flex items-center justify-between gap-2">
-            <span class="px-2 py-0.5 rounded text-[11px] font-semibold border ${isKeagamaan ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-200'}">
+            <span class="px-2 py-0.5 rounded text-[11px] font-semibold border ${meta.categoryBadgeClass}">
               ${escapeHTML(folder.category)}
             </span>
             <span class="px-2 py-0.5 rounded text-[11px] border ${isDone ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold' : 'bg-amber-50 text-amber-800 border-amber-200 font-medium'}">
-              ${isDone ? 'Semua Jilid Selesai ✓' : `${folder.completedVolumes} / ${folder.totalVolumes} Jilid Selesai`}
+              ${isDone ? `Semua ${meta.unit} Selesai ✓` : `${folder.completedVolumes} / ${folder.totalVolumes} Selesai`}
             </span>
           </div>
 
-          <h3 class="font-serif font-bold text-slate-900 text-sm line-clamp-2 leading-tight cursor-pointer hover:text-emerald-800 transition-colors" onclick="openFolderView('${encodedName}')" title="${escapeHTML(folder.name)}">
+          <h3 class="font-serif font-bold text-slate-900 text-sm line-clamp-2 leading-tight cursor-pointer hover:text-amber-800 transition-colors" onclick="openFolderView('${encodedName}')" title="${escapeHTML(folder.name)}">
             ${escapeHTML(folder.name)}
           </h3>
           <p class="text-xs text-slate-500 line-clamp-1">Karya: <span class="font-medium text-slate-700">${escapeHTML(folder.author || '-')}</span></p>
 
           <div class="pt-1">
             <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
-              <span>Progres Jilid: <strong class="text-slate-800">${folder.completedVolumes}</strong> / ${folder.totalVolumes}</span>
-              <span class="font-bold text-emerald-800">${progressPct}%</span>
+              <span>Progres ${meta.unit}: <strong class="text-slate-800">${folder.completedVolumes}</strong> / ${folder.totalVolumes}</span>
+              <span class="font-bold text-amber-800">${progressPct}%</span>
             </div>
             <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-              <div class="h-full bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
+              <div class="h-full bg-gradient-to-r ${meta.progressClass} rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
             </div>
           </div>
 
           <!-- Volume chips teaser -->
           <div class="pt-1 text-[11px] text-slate-500 flex flex-wrap gap-1">
-            ${folder.books.slice(0, 4).map((b) => `<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[10px]">${escapeHTML(b.volume ? `Jilid ${b.volume}` : b.title)}</span>`).join('')}
-            ${folder.totalVolumes > 4 ? `<span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-bold">+${folder.totalVolumes - 4} lainnya</span>` : ''}
+            ${folder.books.slice(0, 4).map((b) => `<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[10px]">${escapeHTML(b.volume ? `${meta.volPrefix} ${b.volume}` : b.title)}</span>`).join('')}
+            ${folder.totalVolumes > 4 ? `<span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 text-[10px] font-bold">+${folder.totalVolumes - 4} lainnya</span>` : ''}
           </div>
         </div>
       </div>
 
       <div class="pt-3 mt-3 border-t border-slate-100 flex flex-col gap-2">
-        <button onclick="openFolderView('${encodedName}')" class="w-full py-2 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer">
-          <i data-lucide="folder-open" class="w-4 h-4"></i> Buka Folder (${folder.totalVolumes} Jilid)
+        <button onclick="openFolderView('${encodedName}')" class="w-full py-2 px-3 rounded-xl ${meta.primaryBtnClass} font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer">
+          <i data-lucide="folder-open" class="w-4 h-4"></i> Buka Folder (${folder.totalVolumes} ${meta.unit})
         </button>
 
         <div class="flex items-center justify-between gap-1 text-xs">
-          <button onclick="openAddBookToFolder('${encodedName}', '${encodedCat}', '${encodedAuthor}')" class="flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center gap-1 transition-colors cursor-pointer">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Jilid
+          <button onclick="openAddBookToFolder('${encodedName}', '${encodedCat}', '${encodedAuthor}')" class="flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 flex items-center justify-center gap-1 transition-colors cursor-pointer">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah ${meta.volPrefix}
           </button>
           <button onclick="confirmDeleteFolder('${encodedName}')" class="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer" title="Hapus Seluruh Folder">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
@@ -1473,6 +1517,7 @@ function createFolderVolumeCardHTML(book, folderName) {
   const current = book.currentPage || 0;
   const progressPct = Math.min(100, Math.round((current / total) * 100));
   const hasPdf = !!(book.pdfUrl || book.pdfBlob);
+  const meta = getFolderCategoryMeta(book.category);
 
   const statusColor = isDone
     ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold'
@@ -1480,12 +1525,12 @@ function createFolderVolumeCardHTML(book, folderName) {
     ? 'bg-sky-50 text-sky-700 border-sky-200 font-medium'
     : 'bg-slate-100 text-slate-600 border-slate-200 font-medium';
 
-  const volLabel = book.volume ? `Jilid ${escapeHTML(book.volume)}` : 'Jilid';
+  const volLabel = book.volume ? `${meta.volPrefix} ${escapeHTML(book.volume)}` : meta.volPrefix;
 
   return `
-    <div class="book-card bg-white rounded-2xl border-2 border-emerald-100/90 p-5 flex flex-col justify-between hover:border-emerald-300 shadow-xs transition-all group">
+    <div class="book-card bg-white rounded-2xl border-2 ${meta.cardBorder} p-5 flex flex-col justify-between shadow-xs transition-all group">
       <div>
-        <div class="book-cover-mockup bg-gradient-to-br ${book.coverGradient || 'from-emerald-800 to-teal-950'} text-white p-4 h-44 flex flex-col justify-between relative shadow-md mb-4 group-hover:scale-[1.01] transition-transform">
+        <div class="book-cover-mockup bg-gradient-to-br ${book.coverGradient || meta.themeGradient} text-white p-4 h-44 flex flex-col justify-between relative shadow-md mb-4 group-hover:scale-[1.01] transition-transform">
           <div class="flex items-center justify-between text-xs z-10">
             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-md bg-amber-400 text-slate-950 shadow-xs">
               <i data-lucide="book" class="w-3 h-3"></i> ${volLabel}
@@ -1498,7 +1543,7 @@ function createFolderVolumeCardHTML(book, folderName) {
           </div>
 
           <div class="z-10 pl-2">
-            <p class="text-[10px] text-emerald-200 font-semibold uppercase tracking-wider">${escapeHTML(folderName)}</p>
+            <p class="text-[10px] ${meta.subtextClass} font-semibold uppercase tracking-wider">${escapeHTML(folderName)}</p>
             <h4 class="font-serif font-bold text-sm sm:text-base leading-snug line-clamp-2 text-white drop-shadow-sm">${escapeHTML(book.title)}</h4>
             <p class="text-[11px] text-white/80 mt-0.5 line-clamp-1 italic">${escapeHTML(book.author)}</p>
           </div>
@@ -1511,7 +1556,7 @@ function createFolderVolumeCardHTML(book, folderName) {
 
         <div class="space-y-2">
           <div class="flex items-center justify-between gap-2">
-            <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+            <span class="px-2 py-0.5 rounded text-[11px] font-bold ${meta.categoryBadgeClass}">
               ${volLabel}
             </span>
             <span class="px-2 py-0.5 rounded text-[11px] border ${statusColor}">
@@ -1529,12 +1574,12 @@ function createFolderVolumeCardHTML(book, folderName) {
               <span class="font-bold text-emerald-800">${progressPct}%</span>
             </div>
             <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-              <div class="h-full bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
+              <div class="h-full bg-gradient-to-r ${meta.progressClass} rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
             </div>
           </div>
 
           ${book.notes ? `
-            <p class="text-[11px] text-slate-500 bg-emerald-50/50 p-2 rounded-xl line-clamp-2 italic border border-emerald-100/60 mt-2">
+            <p class="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-xl line-clamp-2 italic border border-slate-200 mt-2">
               "${escapeHTML(book.notes)}"
             </p>
           ` : ''}
@@ -1544,20 +1589,20 @@ function createFolderVolumeCardHTML(book, folderName) {
       <div class="pt-3 mt-3 border-t border-slate-100 flex flex-col gap-2">
         <div class="flex items-center justify-between gap-1 text-xs">
           ${hasPdf ? `
-            <button onclick="openPdfReader('${book.id}')" class="flex-1 py-2 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer">
+            <button onclick="openPdfReader('${book.id}')" class="flex-1 py-2 px-3 rounded-xl ${meta.primaryBtnClass} font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer">
               <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Baca PDF
             </button>
           ` : `
             <button onclick="openEditBookModal('${book.id}')" class="flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
-              <i data-lucide="file-up" class="w-3.5 h-3.5 text-emerald-700"></i> Upload PDF
+              <i data-lucide="file-up" class="w-3.5 h-3.5 text-amber-700"></i> Upload PDF
             </button>
           `}
 
           <div class="flex items-center gap-1">
-            <button onclick="openEditBookModal('${book.id}')" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer" title="Edit Detail Jilid">
+            <button onclick="openEditBookModal('${book.id}')" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer" title="Edit Detail Buku">
               <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
             </button>
-            <button onclick="confirmDeleteBook('${book.id}')" class="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer" title="Hapus Jilid Ini">
+            <button onclick="confirmDeleteBook('${book.id}')" class="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer" title="Hapus Buku Ini">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
           </div>
@@ -1575,37 +1620,38 @@ function createFolderVolumeCardHTML(book, folderName) {
 function createDualFolderCardHTML(folder) {
   const isDone = folder.completedVolumes === folder.totalVolumes && folder.totalVolumes > 0;
   const progressPct = folder.totalVolumes > 0 ? Math.round((folder.completedVolumes / folder.totalVolumes) * 100) : 0;
+  const meta = getFolderCategoryMeta(folder.category);
   const encodedName = encodeURIComponent(folder.name);
 
   return `
-    <div class="bg-white rounded-2xl p-4 border-2 border-emerald-200/80 shadow-2xs hover:shadow-xs transition-all space-y-3">
+    <div class="bg-white rounded-2xl p-4 border-2 ${meta.badgeBorder} shadow-2xs hover:shadow-xs transition-all space-y-3">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
           <div class="flex items-center gap-1.5 mb-1">
-            <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-              <i data-lucide="folder" class="w-2.5 h-2.5"></i> Seri Kitab
+            <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.categoryBadgeClass}">
+              <i data-lucide="${meta.icon}" class="w-2.5 h-2.5"></i> ${meta.nameBadge}
             </span>
             <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">
-              ${folder.totalVolumes} Jilid
+              ${folder.totalVolumes} ${meta.unit}
             </span>
           </div>
-          <h4 class="font-serif font-bold text-sm text-slate-900 truncate cursor-pointer hover:text-emerald-800" onclick="openFolderView('${encodedName}')" title="${escapeHTML(folder.name)}">
+          <h4 class="font-serif font-bold text-sm text-slate-900 truncate cursor-pointer hover:text-amber-800" onclick="openFolderView('${encodedName}')" title="${escapeHTML(folder.name)}">
             ${escapeHTML(folder.name)}
           </h4>
           <p class="text-[11px] text-slate-500 truncate">Karya: ${escapeHTML(folder.author || '-')}</p>
         </div>
-        <button onclick="openFolderView('${encodedName}')" class="shrink-0 px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1">
+        <button onclick="openFolderView('${encodedName}')" class="shrink-0 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1">
           <i data-lucide="folder-open" class="w-3.5 h-3.5"></i> Buka
         </button>
       </div>
 
       <div class="space-y-1">
         <div class="flex items-center justify-between text-[10px] text-slate-500">
-          <span>${folder.completedVolumes} dari ${folder.totalVolumes} jilid selesai</span>
-          <span class="font-bold text-emerald-800">${progressPct}%</span>
+          <span>${folder.completedVolumes} dari ${folder.totalVolumes} ${meta.unit} selesai</span>
+          <span class="font-bold text-slate-800">${progressPct}%</span>
         </div>
         <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div class="h-full bg-emerald-600 rounded-full transition-all" style="width: ${progressPct}%"></div>
+          <div class="h-full bg-gradient-to-r ${meta.progressClass} rounded-full transition-all" style="width: ${progressPct}%"></div>
         </div>
       </div>
     </div>
@@ -1632,7 +1678,7 @@ function openCreateFolderModal() {
   document.getElementById('new-folder-name').value = '';
   document.getElementById('new-folder-author').value = '';
   document.getElementById('new-folder-category').value =
-    selectedCategory === 'all' ? 'Keagamaan' : selectedCategory;
+    selectedCategory === 'all' ? 'Network Engineer' : selectedCategory;
   document.getElementById('new-folder-start-vol').value = '1';
   document.getElementById('modal-create-folder').classList.remove('hidden');
   lucide.createIcons();
@@ -1648,26 +1694,28 @@ function handleCreateFolderSubmit(e) {
   const folderAuthor = document.getElementById('new-folder-author').value.trim();
   const folderCategory = document.getElementById('new-folder-category').value;
   const startVol = document.getElementById('new-folder-start-vol').value.trim() || '1';
+  const meta = getFolderCategoryMeta(folderCategory);
 
   closeCreateFolderModal();
 
-  // Langsung buka modal tambah buku dengan nama folder dan jilid 1 sudah disiapkan
+  // Langsung buka modal tambah buku dengan nama folder dan urutan volume/jilid sudah disiapkan
   openAddBookModal();
   document.getElementById('book-category-select').value = folderCategory;
   document.getElementById('book-author-input').value = folderAuthor;
   document.getElementById('book-folder-input').value = folderName;
   document.getElementById('book-volume-input').value = startVol;
-  document.getElementById('book-title-input').value = `${folderName} - Jilid ${startVol}`;
+  document.getElementById('book-title-input').value = `${folderName} - ${meta.volPrefix} ${startVol}`;
 
-  showToast(`Folder "${folderName}" disiapkan! Silakan unggah file PDF untuk Jilid ${startVol}.`, 'info');
+  showToast(`Folder "${folderName}" disiapkan! Silakan unggah file PDF untuk ${meta.volPrefix} ${startVol}.`, 'info');
 }
 
 function openAddBookToFolder(encodedName, encodedCat, encodedAuthor) {
   const folderName = decodeURIComponent(encodedName);
-  const category = decodeURIComponent(encodedCat || 'Keagamaan');
+  const category = decodeURIComponent(encodedCat || 'Network Engineer');
   const author = decodeURIComponent(encodedAuthor || '');
+  const meta = getFolderCategoryMeta(category);
 
-  // Cari jilid tertinggi yang sudah ada di folder ini
+  // Cari urutan volume/jilid tertinggi yang sudah ada di folder ini
   const existingVols = cachedBooks
     .filter((b) => (b.folderName || '').trim().toLowerCase() === folderName.trim().toLowerCase())
     .map((b) => parseFloat(String(b.volume || '').replace(/[^0-9.]/g, '')) || 0);
@@ -1679,9 +1727,9 @@ function openAddBookToFolder(encodedName, encodedCat, encodedAuthor) {
   if (author) document.getElementById('book-author-input').value = author;
   document.getElementById('book-folder-input').value = folderName;
   document.getElementById('book-volume-input').value = String(nextVol);
-  document.getElementById('book-title-input').value = `${folderName} - Jilid ${nextVol}`;
+  document.getElementById('book-title-input').value = `${folderName} - ${meta.volPrefix} ${nextVol}`;
 
-  showToast(`Menambahkan jilid baru ke folder "${folderName}".`, 'info');
+  showToast(`Menambahkan ${meta.volPrefix.toLowerCase()} baru ke folder "${folderName}".`, 'info');
 }
 
 async function confirmDeleteFolder(encodedName) {
@@ -1692,7 +1740,7 @@ async function confirmDeleteFolder(encodedName) {
   if (matching.length === 0) return;
 
   const ok = confirm(
-    `Apakah Anda yakin ingin menghapus seluruh folder "${folderName}" beserta seluruh ${matching.length} jilid di dalamnya?\n\nTindakan ini tidak dapat dibatalkan.`
+    `Apakah Anda yakin ingin menghapus seluruh folder "${folderName}" beserta seluruh ${matching.length} buku di dalamnya?\n\nTindakan ini tidak dapat dibatalkan.`
   );
   if (!ok) return;
 
@@ -1705,7 +1753,7 @@ async function confirmDeleteFolder(encodedName) {
     activeFolder = null;
   }
 
-  showToast(`Folder "${folderName}" beserta ${matching.length} jilid berhasil dihapus.`, 'success');
+  showToast(`Folder "${folderName}" beserta ${matching.length} buku berhasil dihapus.`, 'success');
   await renderDashboardView(true);
 }
 
