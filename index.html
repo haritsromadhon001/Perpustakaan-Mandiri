@@ -1423,25 +1423,25 @@
   <!-- ============================================================== -->
   <!-- MODAL 1: TAMBAH / EDIT BUKU (DENGAN UPLOAD FILE PDF) -->
   <!-- ============================================================== -->
-  <div id="modal-book" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 my-8 animate-scale-in">
+  <div id="modal-book" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl border border-slate-100 my-auto max-h-[92vh] flex flex-col animate-scale-in">
       
-      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3 shrink-0">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
             <i data-lucide="book-plus" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 id="modal-book-title" class="text-lg font-bold font-serif text-slate-900">Tambah Buku ke Rak</h3>
+            <h3 id="modal-book-title" class="text-base sm:text-lg font-bold font-serif text-slate-900">Tambah Buku ke Rak</h3>
             <p class="text-xs text-slate-500">Masukkan detail buku beserta file PDF-nya.</p>
           </div>
         </div>
-        <button onclick="closeBookModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+        <button onclick="closeBookModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form id="bookForm" onsubmit="handleSaveBook(event)" class="space-y-4 text-xs">
+      <form id="bookForm" onsubmit="handleSaveBook(event)" class="overflow-y-auto flex-1 pr-1 sm:pr-2 space-y-3.5 text-xs">
         <input type="hidden" id="book-edit-id" value="" />
 
         <!-- Judul Buku -->
@@ -1538,12 +1538,12 @@
           <textarea id="book-notes-input" rows="2" placeholder="Catatan penting, topik bahasan, atau target Anda..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800"></textarea>
         </div>
 
-        <!-- Tombol Aksi -->
-        <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
-          <button type="button" onclick="closeBookModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium">
+        <!-- Tombol Aksi (Sticky di bawah, selalu terlihat) -->
+        <div class="sticky bottom-0 bg-white pt-3 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0 mt-3">
+          <button type="button" onclick="closeBookModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium cursor-pointer">
             Batal
           </button>
-          <button type="submit" id="book-submit-btn" class="px-5 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold flex items-center gap-2 shadow-sm transition-all">
+          <button type="submit" id="book-submit-btn" class="px-5 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold flex items-center gap-2 shadow-sm transition-all cursor-pointer">
             <i data-lucide="save" class="w-4 h-4"></i> Simpan Buku
           </button>
         </div>
@@ -1556,11 +1556,11 @@
   <!-- ============================================================== -->
   <!-- MODAL: BUAT FOLDER / SERI KITAB BERJILID -->
   <!-- ============================================================== -->
-  <div id="modal-create-folder" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 my-8 animate-scale-in">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+  <div id="modal-create-folder" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-7 shadow-2xl border border-slate-100 my-auto max-h-[92vh] flex flex-col animate-scale-in">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3 shrink-0">
         <div class="flex items-center gap-2.5">
-          <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+          <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold shrink-0">
             <i data-lucide="folder-plus" class="w-5 h-5"></i>
           </div>
           <div>
@@ -1568,12 +1568,12 @@
             <p class="text-xs text-slate-500">Kelompokkan kitab berjilid dalam satu wadah rapi</p>
           </div>
         </div>
-        <button type="button" onclick="closeCreateFolderModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+        <button type="button" onclick="closeCreateFolderModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form id="createFolderForm" onsubmit="handleCreateFolderSubmit(event)" class="space-y-3.5 text-xs">
+      <form id="createFolderForm" onsubmit="handleCreateFolderSubmit(event)" class="overflow-y-auto flex-1 pr-1 space-y-3.5 text-xs">
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Nama Folder / Seri Kitab <span class="text-red-500">*</span></label>
           <input type="text" id="new-folder-name" required placeholder="Contoh: Shahih Al-Bukhari / Tafsir Ibnu Katsir" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-800" />
@@ -1608,11 +1608,11 @@
           </p>
         </div>
 
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-          <button type="button" onclick="closeCreateFolderModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium">
+        <div class="sticky bottom-0 bg-white pt-3 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0 mt-2">
+          <button type="button" onclick="closeCreateFolderModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium cursor-pointer">
             Batal
           </button>
-          <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center gap-2 shadow-sm transition-all">
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center gap-2 shadow-sm transition-all cursor-pointer">
             <span>Lanjut Unggah Jilid</span>
             <i data-lucide="arrow-right" class="w-4 h-4"></i>
           </button>
@@ -1625,10 +1625,10 @@
   <!-- ============================================================== -->
   <!-- MODAL 2: NOTION READING SCHEDULE (TAMBAH / EDIT JADWAL) -->
   <!-- ============================================================== -->
-  <div id="modal-schedule" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 my-8 animate-scale-in">
+  <div id="modal-schedule" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-7 shadow-2xl border border-slate-100 my-auto max-h-[92vh] flex flex-col animate-scale-in">
       
-      <div class="flex items-center justify-between pb-3 border-b border-notion-border mb-4">
+      <div class="flex items-center justify-between pb-3 border-b border-notion-border mb-3 shrink-0">
         <div class="flex items-center gap-2.5">
           <span class="text-2xl">🗓️</span>
           <div>
@@ -1636,12 +1636,12 @@
             <p class="text-[11px] text-notion-muted">Penanda sesi baca ala Notion</p>
           </div>
         </div>
-        <button onclick="closeScheduleModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+        <button onclick="closeScheduleModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form id="scheduleForm" onsubmit="handleSaveSchedule(event)" class="space-y-3.5 text-xs">
+      <form id="scheduleForm" onsubmit="handleSaveSchedule(event)" class="overflow-y-auto flex-1 pr-1 space-y-3.5 text-xs">
         <input type="hidden" id="sched-edit-id" value="" />
 
         <div>
@@ -1659,7 +1659,7 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Tanggal Jadwal <span class="text-red-500">*</span></label>
-            <input type="date" id="sched-date-input" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800 bg-white" />
+            <input type="date" id="sched-date-input" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800" />
           </div>
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Waktu / Jam</label>
@@ -1687,11 +1687,11 @@
           <textarea id="sched-notes-input" rows="2" placeholder="Catat poin penting atau pengingat sesi..." class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800"></textarea>
         </div>
 
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-notion-border">
-          <button type="button" onclick="closeScheduleModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium">
+        <div class="sticky bottom-0 bg-white pt-3 border-t border-notion-border flex items-center justify-end gap-2 shrink-0 mt-2">
+          <button type="button" onclick="closeScheduleModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium cursor-pointer">
             Batal
           </button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold flex items-center gap-2 shadow-sm transition-all">
+          <button type="submit" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold flex items-center gap-2 shadow-sm transition-all cursor-pointer">
             <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Simpan Jadwal
           </button>
         </div>
