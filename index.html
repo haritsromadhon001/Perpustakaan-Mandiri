@@ -748,11 +748,24 @@
           </button>
         </div>
 
-        <!-- Search Input -->
-        <div class="relative flex-1 sm:w-64">
-          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-          <input type="text" id="bookSearchInput" oninput="handleBookSearch()" placeholder="Cari judul, penulis..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-all" />
+        <!-- Actions & Search Input -->
+        <div class="flex items-center gap-2.5 flex-1 sm:w-auto justify-end">
+          <button onclick="openCreateFolderModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200/90 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 shadow-2xs" title="Buat folder baru untuk mengelompokkan kitab berjilid">
+            <i data-lucide="folder-plus" class="w-3.5 h-3.5 text-emerald-700"></i>
+            <span>+ Folder Kitab</span>
+          </button>
+
+          <!-- Search Input -->
+          <div class="relative flex-1 sm:w-64 max-w-xs">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="bookSearchInput" oninput="handleBookSearch()" placeholder="Cari judul, penulis, jilid..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-all" />
+          </div>
         </div>
+      </div>
+
+      <!-- Folder / Seri Kitab Active View Header (Tampil saat pengguna membuka folder jilid) -->
+      <div id="folder-view-header" class="hidden mb-6">
+        <!-- Rendered dynamically via JS -->
       </div>
 
       <!-- Books Grid (The Bookshelf - Grid View) -->
@@ -1464,6 +1477,31 @@
           </div>
         </div>
 
+        <!-- Opsi Kitab Berjilid / Masukkan ke Folder -->
+        <div class="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200/90 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-bold text-emerald-950 flex items-center gap-1.5 text-xs">
+              <i data-lucide="folder-archive" class="w-3.5 h-3.5 text-emerald-700"></i>
+              <span>Kitab Berjilid / Seri Folder</span>
+            </label>
+            <span class="text-[10px] text-emerald-800 font-semibold bg-emerald-100 px-2 py-0.5 rounded-full">Opsional</span>
+          </div>
+          <p class="text-[11px] text-slate-500 leading-tight">
+            Isi jika buku ini adalah bagian dari kitab berjilid (misal: <em>Shahih Al-Bukhari, Tafsir Ibnu Katsir</em>) agar otomatis dibundel rapi dalam 1 folder.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+            <div class="sm:col-span-2">
+              <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nama Folder / Seri Kitab</label>
+              <input type="text" id="book-folder-input" list="folder-suggestions" placeholder="Pilih atau ketik nama folder..." class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-800 bg-white" />
+              <datalist id="folder-suggestions"></datalist>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nomor Jilid</label>
+              <input type="text" id="book-volume-input" placeholder="Misal: 1 atau 2" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-800 bg-white" />
+            </div>
+          </div>
+        </div>
+
         <!-- Halaman -->
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -1511,6 +1549,75 @@
         </div>
       </form>
 
+    </div>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- MODAL: BUAT FOLDER / SERI KITAB BERJILID -->
+  <!-- ============================================================== -->
+  <div id="modal-create-folder" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 my-8 animate-scale-in">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+            <i data-lucide="folder-plus" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold font-serif text-slate-900">Buat Folder / Seri Kitab</h3>
+            <p class="text-xs text-slate-500">Kelompokkan kitab berjilid dalam satu wadah rapi</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeCreateFolderModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="createFolderForm" onsubmit="handleCreateFolderSubmit(event)" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nama Folder / Seri Kitab <span class="text-red-500">*</span></label>
+          <input type="text" id="new-folder-name" required placeholder="Contoh: Shahih Al-Bukhari / Tafsir Ibnu Katsir" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-800" />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Penulis / Ulama / Pengarang <span class="text-red-500">*</span></label>
+          <input type="text" id="new-folder-author" required placeholder="Contoh: Imam Al-Bukhari / Ibnu Katsir" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-800" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Kategori</label>
+            <select id="new-folder-category" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-800 bg-white font-medium">
+              <option value="Keagamaan">🕌 Keagamaan</option>
+              <option value="Network Engineer">💻 Network Engineer</option>
+              <option value="Lainnya">📚 Lainnya</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Mulai Dari Jilid</label>
+            <input type="number" id="new-folder-start-vol" min="1" value="1" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-800" />
+          </div>
+        </div>
+
+        <div class="p-3 bg-emerald-50/70 border border-emerald-200/70 rounded-xl text-slate-600 space-y-1">
+          <p class="font-bold text-emerald-900 flex items-center gap-1.5">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-emerald-700"></i> Cara Kerja Folder:
+          </p>
+          <p class="text-[11px] leading-relaxed">
+            Setelah folder dibuat, formulir tambah buku akan terbuka dengan nama folder dan urutan jilid otomatis terisi. Anda tinggal memilih file PDF untuk Jilid tersebut!
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeCreateFolderModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium">
+            Batal
+          </button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center gap-2 shadow-sm transition-all">
+            <span>Lanjut Unggah Jilid</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

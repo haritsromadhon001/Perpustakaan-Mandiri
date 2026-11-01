@@ -37,6 +37,7 @@ Secara bawaan (*default*), tampilan website menggunakan tema **Hitam dan Putih (
 
 ### 4. 📖 Rak Buku & Pembaca PDF Internal
 - Tampilan kartu buku 3D dengan visual sampul buku dan kategori (*Keagamaan*, *Network Engineer*, *Lainnya*).
+- **Folder & Bundel Kitab Berjilid:** Mengelompokkan karya yang berjilid-jilid (seperti *Shahih Al-Bukhari*, *Tafsir Ibnu Katsir*, *Fathul Bari*, dll.) ke dalam satu kartu folder elegan. Rak menjadi sangat rapi tanpa perlu mencari satu per satu lewat pencarian. Dilengkapi navigasi tampilan jilid terurut, status baca per jilid, dan tombol tambah jilid cepat.
 - **Pembaca PDF Bawaan:** Membaca file PDF langsung di dalam website tanpa perlu aplikasi pihak ketiga, lengkap dengan opsi unduh dan buka tab baru.
 - Pelacak halaman membaca (*Progress Bar*) dan penanda status (Belum Dibaca, Sedang Dibaca, Selesai).
 

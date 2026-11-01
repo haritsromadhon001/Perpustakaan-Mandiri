@@ -33,6 +33,42 @@ let isGuestMode = false;
 let currentReadingStatusFilter = 'all'; // 'all', 'unread', 'completed'
 let currentBookshelfLayout = 'grid'; // 'grid', 'dual'
 let currentTheme = localStorage.getItem('PERPUS_THEME') || 'monochrome';
+let activeFolder = null; // Folder / Seri Kitab yang sedang dibuka (null = rak utama)
+
+// Helper: Serialisasi dan Parsing Metadata Folder/Seri Kitab
+function parseNotesMetadata(rawNotes) {
+  if (!rawNotes || typeof rawNotes !== 'string') {
+    return { cleanNotes: '', folderName: '', volume: '' };
+  }
+  const match = rawNotes.match(/<!--PM_SERIES:(.*?)-->/s);
+  if (match) {
+    try {
+      const data = JSON.parse(match[1]);
+      const cleanNotes = rawNotes.replace(/<!--PM_SERIES:(.*?)-->\s*/s, '').trim();
+      return {
+        cleanNotes,
+        folderName: data.folder || '',
+        volume: data.volume !== undefined && data.volume !== null ? String(data.volume) : ''
+      };
+    } catch (e) {
+      console.warn('Gagal parse notes series metadata:', e);
+    }
+  }
+  return { cleanNotes: rawNotes, folderName: '', volume: '' };
+}
+
+function embedNotesMetadata(cleanNotes, folderName, volume) {
+  const clean = (cleanNotes || '').replace(/<!--PM_SERIES:(.*?)-->\s*/s, '').trim();
+  const fName = (folderName || '').trim();
+  const vol = (volume || '').trim();
+
+  if (!fName && !vol) {
+    return clean;
+  }
+
+  const metaTag = `<!--PM_SERIES:${JSON.stringify({ folder: fName, volume: vol })}-->`;
+  return clean ? `${metaTag}\n${clean}` : metaTag;
+}
 
 // Central In-Memory Cache to ensure Mobile and Desktop render identical state
 let cachedBooks = [];
@@ -364,6 +400,7 @@ class DataRepository {
             }
           }
 
+          const finalNotes = embedNotesMetadata(book.notes, book.folderName, book.volume);
           const payload = {
             id: book.id,
             title: book.title || 'Tanpa Judul',
@@ -372,7 +409,7 @@ class DataRepository {
             total_pages: Number(book.totalPages) || 100,
             current_page: Number(book.currentPage) || 0,
             status: book.status || 'Belum Dibaca',
-            notes: book.notes || '',
+            notes: finalNotes,
             cover_gradient: book.coverGradient,
             pdf_url: finalPdfUrl,
             pdf_file_name: finalPdfFileName,
@@ -398,20 +435,25 @@ class DataRepository {
           .order('created_at', { ascending: false });
 
         if (!error && data) {
-          return data.map((b) => ({
-            id: b.id,
-            title: b.title || 'Tanpa Judul',
-            author: b.author || 'Anonim',
-            category: b.category || 'Lainnya',
-            totalPages: Number(b.total_pages) || 100,
-            currentPage: Number(b.current_page) || 0,
-            status: b.status || 'Belum Dibaca',
-            notes: b.notes || '',
-            coverGradient: b.cover_gradient,
-            pdfUrl: b.pdf_url,
-            pdfFileName: b.pdf_file_name,
-            createdAt: b.created_at
-          }));
+          return data.map((b) => {
+            const meta = parseNotesMetadata(b.notes);
+            return {
+              id: b.id,
+              title: b.title || 'Tanpa Judul',
+              author: b.author || 'Anonim',
+              category: b.category || 'Lainnya',
+              totalPages: Number(b.total_pages) || 100,
+              currentPage: Number(b.current_page) || 0,
+              status: b.status || 'Belum Dibaca',
+              folderName: b.folder_name || b.folderName || meta.folderName || '',
+              volume: b.volume !== undefined && b.volume !== null && b.volume !== '' ? String(b.volume) : meta.volume || '',
+              notes: meta.cleanNotes,
+              coverGradient: b.cover_gradient,
+              pdfUrl: b.pdf_url,
+              pdfFileName: b.pdf_file_name,
+              createdAt: b.created_at
+            };
+          });
         } else if (error) {
           console.warn('Supabase getAllBooks error:', error.message);
         }
@@ -424,14 +466,55 @@ class DataRepository {
     if (this.mode === 'server') {
       try {
         const res = await fetch('/api/books', { cache: 'no-store' });
-        if (res.ok) return await res.json();
+        if (res.ok) {
+          const raw = await res.json();
+          return (raw || []).map((b) => {
+            const meta = parseNotesMetadata(b.notes);
+            return {
+              id: b.id,
+              title: b.title || 'Tanpa Judul',
+              author: b.author || 'Anonim',
+              category: b.category || 'Lainnya',
+              totalPages: Number(b.totalPages || b.total_pages) || 100,
+              currentPage: Number(b.currentPage || b.current_page) || 0,
+              status: b.status || 'Belum Dibaca',
+              folderName: b.folderName || b.folder_name || meta.folderName || '',
+              volume: b.volume !== undefined && b.volume !== null && b.volume !== '' ? String(b.volume) : meta.volume || '',
+              notes: meta.cleanNotes,
+              coverGradient: b.coverGradient || b.cover_gradient,
+              pdfUrl: b.pdfUrl || b.pdf_url,
+              pdfFileName: b.pdfFileName || b.pdf_file_name,
+              createdAt: b.createdAt || b.created_at
+            };
+          });
+        }
       } catch (err) {
         console.error('Server fetch error:', err);
       }
     }
 
     // Mode IndexedDB Lokal
-    return await this.getLocalIndexedDbBooks();
+    const idbBooks = await this.getLocalIndexedDbBooks();
+    return (idbBooks || []).map((b) => {
+      const meta = parseNotesMetadata(b.notes);
+      return {
+        id: b.id,
+        title: b.title || 'Tanpa Judul',
+        author: b.author || 'Anonim',
+        category: b.category || 'Lainnya',
+        totalPages: Number(b.totalPages || b.total_pages) || 100,
+        currentPage: Number(b.currentPage || b.current_page) || 0,
+        status: b.status || 'Belum Dibaca',
+        folderName: b.folderName || b.folder_name || meta.folderName || '',
+        volume: b.volume !== undefined && b.volume !== null && b.volume !== '' ? String(b.volume) : meta.volume || '',
+        notes: meta.cleanNotes,
+        coverGradient: b.coverGradient || b.cover_gradient,
+        pdfUrl: b.pdfUrl || b.pdf_url,
+        pdfFileName: b.pdfFileName || b.pdf_file_name,
+        pdfBlob: b.pdfBlob,
+        createdAt: b.createdAt || b.created_at
+      };
+    });
   }
 
   async getBook(id) {
@@ -440,6 +523,14 @@ class DataRepository {
   }
 
   async saveBook(book) {
+    const finalNotes = embedNotesMetadata(book.notes, book.folderName, book.volume);
+    const bookWithSerializedNotes = {
+      ...book,
+      notes: finalNotes,
+      folderName: book.folderName || '',
+      volume: book.volume !== undefined && book.volume !== null ? String(book.volume) : ''
+    };
+
     // Mode Supabase Cloud (Vercel)
     if (this.mode === 'supabase' && this.supabase) {
       const payload = {
@@ -450,7 +541,7 @@ class DataRepository {
         total_pages: Number(book.totalPages) || 100,
         current_page: Number(book.currentPage) || 0,
         status: book.status || 'Belum Dibaca',
-        notes: book.notes || '',
+        notes: finalNotes,
         cover_gradient: book.coverGradient,
         pdf_url: book.pdfUrl || null,
         pdf_file_name: book.pdfFileName || null,
@@ -463,8 +554,8 @@ class DataRepository {
 
       if (error) throw error;
       // Backup ke IndexedDB lokal
-      this.saveLocalIndexedDbBook(book).catch(() => {});
-      return book;
+      this.saveLocalIndexedDbBook(bookWithSerializedNotes).catch(() => {});
+      return bookWithSerializedNotes;
     }
 
     // Mode Server Python Lokal
@@ -472,13 +563,13 @@ class DataRepository {
       const res = await fetch('/api/books', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(book)
+        body: JSON.stringify(bookWithSerializedNotes)
       });
       return await res.json();
     }
 
     // Mode IndexedDB Lokal
-    return await this.saveLocalIndexedDbBook(book);
+    return await this.saveLocalIndexedDbBook(bookWithSerializedNotes);
   }
 
   async deleteBook(id) {
@@ -825,19 +916,103 @@ async function renderDashboardView(forceRefresh = false) {
   const dualCompletedList = document.getElementById('dual-completed-list');
   if (!container || !emptyState) return;
 
+  const searchLow = (currentSearchTerm || '').toLowerCase().trim();
+
+  // KONDISI 1: JIKA SEDANG MEMBUKA FOLDER / SERI KITAB
+  if (activeFolder) {
+    const folderAllBooks = cachedBooks.filter(
+      (b) => (b.folderName || '').trim().toLowerCase() === activeFolder.trim().toLowerCase()
+    );
+
+    if (folderAllBooks.length === 0) {
+      activeFolder = null;
+      renderFolderViewHeader(null, []);
+    } else {
+      renderFolderViewHeader(activeFolder, folderAllBooks);
+
+      const folderFiltered = folderAllBooks.filter((book) => {
+        const matchSearch =
+          !searchLow ||
+          (book.title || '').toLowerCase().includes(searchLow) ||
+          (book.author || '').toLowerCase().includes(searchLow) ||
+          (book.volume || '').toLowerCase().includes(searchLow) ||
+          (book.notes || '').toLowerCase().includes(searchLow);
+
+        let matchReadingStatus = true;
+        if (currentReadingStatusFilter === 'unread') {
+          matchReadingStatus = book.status !== 'Selesai';
+        } else if (currentReadingStatusFilter === 'completed') {
+          matchReadingStatus = book.status === 'Selesai';
+        }
+
+        const matchStatus =
+          currentStatusFilter === 'all' || book.status === currentStatusFilter;
+
+        return matchSearch && matchReadingStatus && matchStatus;
+      });
+
+      // Urutkan jilid secara numerik (Jilid 1, Jilid 2, dst.)
+      folderFiltered.sort((a, b) => {
+        const numA = parseFloat(String(a.volume || '').replace(/[^0-9.]/g, '')) || 0;
+        const numB = parseFloat(String(b.volume || '').replace(/[^0-9.]/g, '')) || 0;
+        if (numA !== numB) return numA - numB;
+        return (a.title || '').localeCompare(b.title || '');
+      });
+
+      if (folderFiltered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-12 text-center bg-white rounded-3xl border border-dashed border-emerald-200 p-6">
+            <p class="text-xs text-slate-500 mb-4">Tidak ada jilid yang sesuai dengan pencarian atau filter status ini.</p>
+            <button onclick="openAddBookToFolder('${encodeURIComponent(activeFolder)}', '${encodeURIComponent(folderAllBooks[0]?.category || 'Keagamaan')}', '${encodeURIComponent(folderAllBooks[0]?.author || '')}')" class="px-4 py-2 rounded-xl bg-emerald-700 text-white font-semibold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer">
+              <i data-lucide="plus" class="w-4 h-4"></i> Tambah Jilid Baru
+            </button>
+          </div>
+        `;
+        if (dualUnreadList) dualUnreadList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-amber-200">Tidak ada jilid dalam daftar ini.</p>`;
+        if (dualCompletedList) dualCompletedList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-emerald-200">Tidak ada jilid dalam daftar ini.</p>`;
+        emptyState.classList.add('hidden');
+        lucide.createIcons();
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      container.innerHTML = folderFiltered.map((book) => createFolderVolumeCardHTML(book, activeFolder)).join('');
+
+      if (dualUnreadList && dualCompletedList) {
+        const unreadVols = folderFiltered.filter((b) => b.status !== 'Selesai');
+        const completedVols = folderFiltered.filter((b) => b.status === 'Selesai');
+
+        dualUnreadList.innerHTML = unreadVols.length > 0
+          ? unreadVols.map((b) => createDualBookCardHTML(b)).join('')
+          : `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-amber-200">Semua jilid di folder ini telah tuntas dibaca! 🎉</p>`;
+
+        dualCompletedList.innerHTML = completedVols.length > 0
+          ? completedVols.map((b) => createDualBookCardHTML(b)).join('')
+          : `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-emerald-200">Belum ada jilid yang tuntas dibaca.</p>`;
+      }
+
+      lucide.createIcons();
+      return;
+    }
+  }
+
+  // KONDISI 2: TAMPILAN RAK UTAMA (NORMAL)
+  renderFolderViewHeader(null, []);
+
+  // Filter buku dari cachedBooks
   const filtered = cachedBooks.filter((book) => {
     const bookCat = (book.category || '').toLowerCase();
     const selCat = (selectedCategory || 'all').toLowerCase();
     const matchCat = selCat === 'all' || bookCat === selCat;
 
-    const searchLow = (currentSearchTerm || '').toLowerCase().trim();
     const matchSearch =
       !searchLow ||
       (book.title || '').toLowerCase().includes(searchLow) ||
       (book.author || '').toLowerCase().includes(searchLow) ||
+      (book.folderName || '').toLowerCase().includes(searchLow) ||
+      (book.volume || '').toLowerCase().includes(searchLow) ||
       (book.notes || '').toLowerCase().includes(searchLow);
 
-    // Reading Status Filter: 'all', 'unread' (Belum Dibaca & Sedang Dibaca), 'completed' (Selesai)
     let matchReadingStatus = true;
     if (currentReadingStatusFilter === 'unread') {
       matchReadingStatus = book.status !== 'Selesai';
@@ -851,7 +1026,56 @@ async function renderDashboardView(forceRefresh = false) {
     return matchCat && matchSearch && matchReadingStatus && matchStatus;
   });
 
-  if (filtered.length === 0) {
+  // Kelompokkan buku berjilid ke dalam folder
+  const folderGroupsMap = new Map();
+  const standaloneBooks = [];
+
+  filtered.forEach((book) => {
+    const fName = (book.folderName || '').trim();
+    if (fName) {
+      const key = fName.toLowerCase();
+      if (!folderGroupsMap.has(key)) {
+        folderGroupsMap.set(key, {
+          isFolder: true,
+          name: fName,
+          category: book.category || 'Keagamaan',
+          author: book.author || 'Anonim',
+          books: [],
+          totalVolumes: 0,
+          completedVolumes: 0,
+          latestCreatedAt: book.createdAt || ''
+        });
+      }
+      const group = folderGroupsMap.get(key);
+      group.books.push(book);
+      group.totalVolumes++;
+      if (book.status === 'Selesai') group.completedVolumes++;
+      if (book.createdAt && book.createdAt > group.latestCreatedAt) {
+        group.latestCreatedAt = book.createdAt;
+      }
+    } else {
+      standaloneBooks.push(book);
+    }
+  });
+
+  const folderList = Array.from(folderGroupsMap.values());
+  folderList.forEach((f) => {
+    f.books.sort((a, b) => {
+      const numA = parseFloat(String(a.volume || '').replace(/[^0-9.]/g, '')) || 0;
+      const numB = parseFloat(String(b.volume || '').replace(/[^0-9.]/g, '')) || 0;
+      if (numA !== numB) return numA - numB;
+      return (a.title || '').localeCompare(b.title || '');
+    });
+  });
+
+  const shelfItems = [...folderList, ...standaloneBooks];
+  shelfItems.sort((a, b) => {
+    const timeA = a.latestCreatedAt || a.createdAt || '';
+    const timeB = b.latestCreatedAt || b.createdAt || '';
+    return timeB.localeCompare(timeA);
+  });
+
+  if (shelfItems.length === 0) {
     container.innerHTML = '';
     if (dualUnreadList) dualUnreadList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-amber-200">Tidak ada buku dalam daftar ini.</p>`;
     if (dualCompletedList) dualCompletedList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-emerald-200">Tidak ada buku dalam daftar ini.</p>`;
@@ -860,23 +1084,36 @@ async function renderDashboardView(forceRefresh = false) {
   }
 
   emptyState.classList.add('hidden');
-  container.innerHTML = filtered.map((book) => createBookCardHTML(book)).join('');
+  container.innerHTML = shelfItems
+    .map((item) => (item.isFolder ? createFolderCardHTML(item) : createBookCardHTML(item)))
+    .join('');
 
   // Dual Column Rendering
   if (dualUnreadList && dualCompletedList) {
-    const unreadBooks = filtered.filter((b) => b.status !== 'Selesai');
-    const completedBooks = filtered.filter((b) => b.status === 'Selesai');
+    const unreadItems = shelfItems.filter((item) => {
+      if (item.isFolder) return item.completedVolumes < item.totalVolumes;
+      return item.status !== 'Selesai';
+    });
 
-    if (unreadBooks.length === 0) {
+    const completedItems = shelfItems.filter((item) => {
+      if (item.isFolder) return item.completedVolumes === item.totalVolumes;
+      return item.status === 'Selesai';
+    });
+
+    if (unreadItems.length === 0) {
       dualUnreadList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-amber-200">Semua buku pada kategori ini telah selesai dibaca! 🎉</p>`;
     } else {
-      dualUnreadList.innerHTML = unreadBooks.map((b) => createDualBookCardHTML(b)).join('');
+      dualUnreadList.innerHTML = unreadItems
+        .map((item) => (item.isFolder ? createDualFolderCardHTML(item) : createDualBookCardHTML(item)))
+        .join('');
     }
 
-    if (completedBooks.length === 0) {
+    if (completedItems.length === 0) {
       dualCompletedList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-dashed border-emerald-200">Belum ada buku yang ditandai selesai. Selesaikan sesi membaca Anda!</p>`;
     } else {
-      dualCompletedList.innerHTML = completedBooks.map((b) => createDualBookCardHTML(b)).join('');
+      dualCompletedList.innerHTML = completedItems
+        .map((item) => (item.isFolder ? createDualFolderCardHTML(item) : createDualBookCardHTML(item)))
+        .join('');
     }
   }
 
@@ -1056,6 +1293,429 @@ function createDualBookCardHTML(book) {
       </div>
     </div>
   `;
+}
+
+// ==============================================================================
+// 4.1 FOLDER & KITAB BERJILID COMPONENTS & HANDLERS
+// ==============================================================================
+
+function renderFolderViewHeader(folderName, folderBooks) {
+  const container = document.getElementById('folder-view-header');
+  if (!container) return;
+
+  if (!folderName || !folderBooks || folderBooks.length === 0) {
+    container.classList.add('hidden');
+    container.innerHTML = '';
+    return;
+  }
+
+  container.classList.remove('hidden');
+  const firstBook = folderBooks[0] || {};
+  const author = firstBook.author || 'Anonim';
+  const category = firstBook.category || 'Keagamaan';
+  const totalVolumes = folderBooks.length;
+  const completedCount = folderBooks.filter((b) => b.status === 'Selesai').length;
+  const totalPages = folderBooks.reduce((sum, b) => sum + (b.totalPages || 0), 0);
+  const readPages = folderBooks.reduce((sum, b) => sum + (b.currentPage || 0), 0);
+
+  const encodedName = encodeURIComponent(folderName);
+  const encodedCat = encodeURIComponent(category);
+  const encodedAuthor = encodeURIComponent(author);
+
+  container.innerHTML = `
+    <div class="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl shadow-lg border border-emerald-700/40 relative overflow-hidden animate-scale-in">
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-2">
+          <div class="flex items-center gap-2 text-xs">
+            <button onclick="closeFolderView()" class="hover:underline flex items-center gap-1.5 font-bold text-emerald-200 hover:text-white cursor-pointer transition-colors">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Rak Utama
+            </button>
+            <span class="text-white/40">/</span>
+            <span class="px-2.5 py-0.5 rounded-full bg-emerald-800/80 text-emerald-100 text-[11px] font-bold border border-emerald-700/60">${escapeHTML(category)}</span>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-md shrink-0">
+              <i data-lucide="library" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-xl sm:text-2xl font-bold font-serif text-white flex items-center gap-2 flex-wrap">
+                <span>${escapeHTML(folderName)}</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-100 border border-emerald-400/30 font-sans font-bold">
+                  ${totalVolumes} Jilid
+                </span>
+              </h2>
+              <p class="text-xs text-emerald-200/90 mt-0.5">
+                Karya: <strong class="text-white">${escapeHTML(author)}</strong> • Progres: <strong class="text-amber-300">${completedCount}/${totalVolumes} Jilid Selesai</strong> (${readPages}/${totalPages} Hal)
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <button onclick="openAddBookToFolder('${encodedName}', '${encodedCat}', '${encodedAuthor}')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> + Tambah Jilid Baru
+          </button>
+          <button onclick="confirmDeleteFolder('${encodedName}')" class="px-3.5 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-200 border border-red-500/30 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5" title="Hapus Seluruh Folder">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Hapus Folder</span>
+          </button>
+          <button onclick="closeFolderView()" class="px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-xs transition-colors cursor-pointer" title="Tutup Tampilan Folder">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createFolderCardHTML(folder) {
+  const isDone = folder.completedVolumes === folder.totalVolumes && folder.totalVolumes > 0;
+  const progressPct = folder.totalVolumes > 0 ? Math.round((folder.completedVolumes / folder.totalVolumes) * 100) : 0;
+  const isKeagamaan = folder.category === 'Keagamaan';
+  const encodedName = encodeURIComponent(folder.name);
+  const encodedCat = encodeURIComponent(folder.category);
+  const encodedAuthor = encodeURIComponent(folder.author);
+
+  const themeGradient = isKeagamaan
+    ? 'from-emerald-800 via-teal-900 to-slate-950'
+    : 'from-amber-800 via-stone-900 to-slate-950';
+
+  const badgeBorder = isKeagamaan
+    ? 'border-emerald-500/40 hover:border-emerald-500'
+    : 'border-amber-500/40 hover:border-amber-500';
+
+  return `
+    <div class="folder-card bg-white rounded-2xl border-2 ${badgeBorder} p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-all group relative">
+      <!-- 3D Stack Layer Simulation -->
+      <div class="absolute -top-1.5 left-5 right-5 h-2 bg-slate-300 dark:bg-slate-700 rounded-t-xl -z-10 group-hover:-top-2 transition-all"></div>
+      <div class="absolute -top-3 left-8 right-8 h-2 bg-slate-200 dark:bg-slate-800 rounded-t-xl -z-20 group-hover:-top-4 transition-all"></div>
+
+      <div>
+        <div class="book-cover-mockup bg-gradient-to-br ${themeGradient} text-white p-4 h-48 flex flex-col justify-between relative shadow-md mb-4 group-hover:scale-[1.01] transition-transform cursor-pointer" onclick="openFolderView('${encodedName}')">
+          <div class="flex items-center justify-between text-xs z-10">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md bg-white/20 text-white border border-white/20">
+              <i data-lucide="folder-archive" class="w-3 h-3 text-amber-300"></i> Seri Kitab Berjilid
+            </span>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400 text-slate-950 flex items-center gap-1 shadow-sm">
+              <i data-lucide="library" class="w-3 h-3"></i> ${folder.totalVolumes} Jilid
+            </span>
+          </div>
+
+          <div class="z-10 pl-2">
+            <div class="flex items-center gap-1 text-[11px] text-amber-200 font-medium mb-1">
+              <i data-lucide="layers" class="w-3 h-3"></i> Koleksi Lengkap
+            </div>
+            <h4 class="font-serif font-bold text-sm sm:text-base leading-snug line-clamp-2 text-white drop-shadow-sm">${escapeHTML(folder.name)}</h4>
+            <p class="text-[11px] text-white/80 mt-1 line-clamp-1 italic">${escapeHTML(folder.author || 'Anonim')}</p>
+          </div>
+
+          <div class="z-10 flex items-center justify-between text-[10px] text-white/80 pl-2 border-t border-white/15 pt-2">
+            <span>${folder.totalVolumes} Jilid Terdaftar</span>
+            <span class="font-semibold text-amber-300">${folder.completedVolumes}/${folder.totalVolumes} Selesai</span>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="px-2 py-0.5 rounded text-[11px] font-semibold border ${isKeagamaan ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-200'}">
+              ${escapeHTML(folder.category)}
+            </span>
+            <span class="px-2 py-0.5 rounded text-[11px] border ${isDone ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold' : 'bg-amber-50 text-amber-800 border-amber-200 font-medium'}">
+              ${isDone ? 'Semua Jilid Selesai ✓' : `${folder.completedVolumes} / ${folder.totalVolumes} Jilid Selesai`}
+            </span>
+          </div>
+
+          <h3 class="font-serif font-bold text-slate-900 text-sm line-clamp-2 leading-tight cursor-pointer hover:text-emerald-800 transition-colors" onclick="openFolderView('${encodedName}')" title="${escapeHTML(folder.name)}">
+            ${escapeHTML(folder.name)}
+          </h3>
+          <p class="text-xs text-slate-500 line-clamp-1">Karya: <span class="font-medium text-slate-700">${escapeHTML(folder.author || '-')}</span></p>
+
+          <div class="pt-1">
+            <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+              <span>Progres Jilid: <strong class="text-slate-800">${folder.completedVolumes}</strong> / ${folder.totalVolumes}</span>
+              <span class="font-bold text-emerald-800">${progressPct}%</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
+            </div>
+          </div>
+
+          <!-- Volume chips teaser -->
+          <div class="pt-1 text-[11px] text-slate-500 flex flex-wrap gap-1">
+            ${folder.books.slice(0, 4).map((b) => `<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[10px]">${escapeHTML(b.volume ? `Jilid ${b.volume}` : b.title)}</span>`).join('')}
+            ${folder.totalVolumes > 4 ? `<span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-bold">+${folder.totalVolumes - 4} lainnya</span>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3 mt-3 border-t border-slate-100 flex flex-col gap-2">
+        <button onclick="openFolderView('${encodedName}')" class="w-full py-2 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer">
+          <i data-lucide="folder-open" class="w-4 h-4"></i> Buka Folder (${folder.totalVolumes} Jilid)
+        </button>
+
+        <div class="flex items-center justify-between gap-1 text-xs">
+          <button onclick="openAddBookToFolder('${encodedName}', '${encodedCat}', '${encodedAuthor}')" class="flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center gap-1 transition-colors cursor-pointer">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Jilid
+          </button>
+          <button onclick="confirmDeleteFolder('${encodedName}')" class="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer" title="Hapus Seluruh Folder">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createFolderVolumeCardHTML(book, folderName) {
+  const isDone = book.status === 'Selesai';
+  const total = book.totalPages || 100;
+  const current = book.currentPage || 0;
+  const progressPct = Math.min(100, Math.round((current / total) * 100));
+  const hasPdf = !!(book.pdfUrl || book.pdfBlob);
+
+  const statusColor = isDone
+    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold'
+    : book.status === 'Sedang Dibaca'
+    ? 'bg-sky-50 text-sky-700 border-sky-200 font-medium'
+    : 'bg-slate-100 text-slate-600 border-slate-200 font-medium';
+
+  const volLabel = book.volume ? `Jilid ${escapeHTML(book.volume)}` : 'Jilid';
+
+  return `
+    <div class="book-card bg-white rounded-2xl border-2 border-emerald-100/90 p-5 flex flex-col justify-between hover:border-emerald-300 shadow-xs transition-all group">
+      <div>
+        <div class="book-cover-mockup bg-gradient-to-br ${book.coverGradient || 'from-emerald-800 to-teal-950'} text-white p-4 h-44 flex flex-col justify-between relative shadow-md mb-4 group-hover:scale-[1.01] transition-transform">
+          <div class="flex items-center justify-between text-xs z-10">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-md bg-amber-400 text-slate-950 shadow-xs">
+              <i data-lucide="book" class="w-3 h-3"></i> ${volLabel}
+            </span>
+            ${hasPdf ? `
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-600/90 text-white flex items-center gap-1 shadow-2xs">
+                <i data-lucide="file-text" class="w-2.5 h-2.5"></i> PDF
+              </span>
+            ` : ''}
+          </div>
+
+          <div class="z-10 pl-2">
+            <p class="text-[10px] text-emerald-200 font-semibold uppercase tracking-wider">${escapeHTML(folderName)}</p>
+            <h4 class="font-serif font-bold text-sm sm:text-base leading-snug line-clamp-2 text-white drop-shadow-sm">${escapeHTML(book.title)}</h4>
+            <p class="text-[11px] text-white/80 mt-0.5 line-clamp-1 italic">${escapeHTML(book.author)}</p>
+          </div>
+
+          <div class="z-10 flex items-center justify-between text-[10px] text-white/70 pl-2 border-t border-white/15 pt-2">
+            <span>${total} Halaman</span>
+            <span>${progressPct}% Selesai</span>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              ${volLabel}
+            </span>
+            <span class="px-2 py-0.5 rounded text-[11px] border ${statusColor}">
+              ${escapeHTML(book.status)}
+            </span>
+          </div>
+
+          <h3 class="font-serif font-bold text-slate-900 text-sm line-clamp-2 leading-tight" title="${escapeHTML(book.title)}">
+            ${escapeHTML(book.title)}
+          </h3>
+
+          <div class="pt-1">
+            <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+              <span>Kemajuan: <strong class="text-slate-800">${current}</strong> / ${total} hal</span>
+              <span class="font-bold text-emerald-800">${progressPct}%</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
+            </div>
+          </div>
+
+          ${book.notes ? `
+            <p class="text-[11px] text-slate-500 bg-emerald-50/50 p-2 rounded-xl line-clamp-2 italic border border-emerald-100/60 mt-2">
+              "${escapeHTML(book.notes)}"
+            </p>
+          ` : ''}
+        </div>
+      </div>
+
+      <div class="pt-3 mt-3 border-t border-slate-100 flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-1 text-xs">
+          ${hasPdf ? `
+            <button onclick="openPdfReader('${book.id}')" class="flex-1 py-2 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer">
+              <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Baca PDF
+            </button>
+          ` : `
+            <button onclick="openEditBookModal('${book.id}')" class="flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
+              <i data-lucide="file-up" class="w-3.5 h-3.5 text-emerald-700"></i> Upload PDF
+            </button>
+          `}
+
+          <div class="flex items-center gap-1">
+            <button onclick="openEditBookModal('${book.id}')" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer" title="Edit Detail Jilid">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </button>
+            <button onclick="confirmDeleteBook('${book.id}')" class="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer" title="Hapus Jilid Ini">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <button onclick="toggleBookReadStatus('${book.id}')" class="w-full py-1.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${isDone ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'}">
+          <i data-lucide="${isDone ? 'check-check' : 'check'}" class="w-3.5 h-3.5 ${isDone ? 'text-emerald-600' : 'text-slate-400'}"></i>
+          <span>${isDone ? 'Sudah Selesai Dibaca ✓' : 'Tandai Selesai Dibaca'}</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function createDualFolderCardHTML(folder) {
+  const isDone = folder.completedVolumes === folder.totalVolumes && folder.totalVolumes > 0;
+  const progressPct = folder.totalVolumes > 0 ? Math.round((folder.completedVolumes / folder.totalVolumes) * 100) : 0;
+  const encodedName = encodeURIComponent(folder.name);
+
+  return `
+    <div class="bg-white rounded-2xl p-4 border-2 border-emerald-200/80 shadow-2xs hover:shadow-xs transition-all space-y-3">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+              <i data-lucide="folder" class="w-2.5 h-2.5"></i> Seri Kitab
+            </span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">
+              ${folder.totalVolumes} Jilid
+            </span>
+          </div>
+          <h4 class="font-serif font-bold text-sm text-slate-900 truncate cursor-pointer hover:text-emerald-800" onclick="openFolderView('${encodedName}')" title="${escapeHTML(folder.name)}">
+            ${escapeHTML(folder.name)}
+          </h4>
+          <p class="text-[11px] text-slate-500 truncate">Karya: ${escapeHTML(folder.author || '-')}</p>
+        </div>
+        <button onclick="openFolderView('${encodedName}')" class="shrink-0 px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1">
+          <i data-lucide="folder-open" class="w-3.5 h-3.5"></i> Buka
+        </button>
+      </div>
+
+      <div class="space-y-1">
+        <div class="flex items-center justify-between text-[10px] text-slate-500">
+          <span>${folder.completedVolumes} dari ${folder.totalVolumes} jilid selesai</span>
+          <span class="font-bold text-emerald-800">${progressPct}%</span>
+        </div>
+        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div class="h-full bg-emerald-600 rounded-full transition-all" style="width: ${progressPct}%"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Navigasi & Aksi Folder
+function openFolderView(encodedName) {
+  const folderName = decodeURIComponent(encodedName);
+  activeFolder = folderName;
+  renderDashboardView();
+  const header = document.getElementById('folder-view-header');
+  if (header) {
+    header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function closeFolderView() {
+  activeFolder = null;
+  renderDashboardView();
+}
+
+function openCreateFolderModal() {
+  document.getElementById('new-folder-name').value = '';
+  document.getElementById('new-folder-author').value = '';
+  document.getElementById('new-folder-category').value =
+    selectedCategory === 'all' ? 'Keagamaan' : selectedCategory;
+  document.getElementById('new-folder-start-vol').value = '1';
+  document.getElementById('modal-create-folder').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeCreateFolderModal() {
+  document.getElementById('modal-create-folder').classList.add('hidden');
+}
+
+function handleCreateFolderSubmit(e) {
+  e.preventDefault();
+  const folderName = document.getElementById('new-folder-name').value.trim();
+  const folderAuthor = document.getElementById('new-folder-author').value.trim();
+  const folderCategory = document.getElementById('new-folder-category').value;
+  const startVol = document.getElementById('new-folder-start-vol').value.trim() || '1';
+
+  closeCreateFolderModal();
+
+  // Langsung buka modal tambah buku dengan nama folder dan jilid 1 sudah disiapkan
+  openAddBookModal();
+  document.getElementById('book-category-select').value = folderCategory;
+  document.getElementById('book-author-input').value = folderAuthor;
+  document.getElementById('book-folder-input').value = folderName;
+  document.getElementById('book-volume-input').value = startVol;
+  document.getElementById('book-title-input').value = `${folderName} - Jilid ${startVol}`;
+
+  showToast(`Folder "${folderName}" disiapkan! Silakan unggah file PDF untuk Jilid ${startVol}.`, 'info');
+}
+
+function openAddBookToFolder(encodedName, encodedCat, encodedAuthor) {
+  const folderName = decodeURIComponent(encodedName);
+  const category = decodeURIComponent(encodedCat || 'Keagamaan');
+  const author = decodeURIComponent(encodedAuthor || '');
+
+  // Cari jilid tertinggi yang sudah ada di folder ini
+  const existingVols = cachedBooks
+    .filter((b) => (b.folderName || '').trim().toLowerCase() === folderName.trim().toLowerCase())
+    .map((b) => parseFloat(String(b.volume || '').replace(/[^0-9.]/g, '')) || 0);
+
+  const nextVol = existingVols.length > 0 ? Math.max(...existingVols) + 1 : 1;
+
+  openAddBookModal();
+  document.getElementById('book-category-select').value = category;
+  if (author) document.getElementById('book-author-input').value = author;
+  document.getElementById('book-folder-input').value = folderName;
+  document.getElementById('book-volume-input').value = String(nextVol);
+  document.getElementById('book-title-input').value = `${folderName} - Jilid ${nextVol}`;
+
+  showToast(`Menambahkan jilid baru ke folder "${folderName}".`, 'info');
+}
+
+async function confirmDeleteFolder(encodedName) {
+  const folderName = decodeURIComponent(encodedName);
+  const matching = cachedBooks.filter(
+    (b) => (b.folderName || '').trim().toLowerCase() === folderName.trim().toLowerCase()
+  );
+  if (matching.length === 0) return;
+
+  const ok = confirm(
+    `Apakah Anda yakin ingin menghapus seluruh folder "${folderName}" beserta seluruh ${matching.length} jilid di dalamnya?\n\nTindakan ini tidak dapat dibatalkan.`
+  );
+  if (!ok) return;
+
+  showToast(`Menghapus folder "${folderName}"...`, 'info');
+  for (const b of matching) {
+    await dataRepo.deleteBook(b.id);
+  }
+
+  if (activeFolder && activeFolder.toLowerCase() === folderName.toLowerCase()) {
+    activeFolder = null;
+  }
+
+  showToast(`Folder "${folderName}" beserta ${matching.length} jilid berhasil dihapus.`, 'success');
+  await renderDashboardView(true);
+}
+
+function updateFolderDatalist() {
+  const datalist = document.getElementById('folder-suggestions');
+  if (!datalist) return;
+  const folderNames = Array.from(
+    new Set(cachedBooks.map((b) => (b.folderName || '').trim()).filter(Boolean))
+  ).sort();
+  datalist.innerHTML = folderNames.map((name) => `<option value="${escapeHTML(name)}">`).join('');
 }
 
 // 5 KATA-KATA BIJAK & MAKNANYA UNTUK PEMBACA
@@ -1512,7 +2172,10 @@ async function renderScheduleView() {
       bookSelect.innerHTML = '<option value="">(Belum ada buku di rak - Tambah buku dulu)</option>';
     } else {
       bookSelect.innerHTML = books
-        .map((b) => `<option value="${b.id}">${escapeHTML(b.title)} (${escapeHTML(b.category)})</option>`)
+        .map((b) => {
+          const folderInfo = b.folderName ? ` • ${escapeHTML(b.folderName)}${b.volume ? ` Jilid ${escapeHTML(b.volume)}` : ''}` : '';
+          return `<option value="${b.id}">${escapeHTML(b.title)} (${escapeHTML(b.category)}${folderInfo})</option>`;
+        })
         .join('');
     }
   }
@@ -1804,7 +2467,10 @@ function openAddBookModal() {
   document.getElementById('book-status-select').value = 'Belum Dibaca';
   document.getElementById('book-total-pages').value = '150';
   document.getElementById('book-current-page').value = '0';
+  document.getElementById('book-folder-input').value = '';
+  document.getElementById('book-volume-input').value = '';
   document.getElementById('book-notes-input').value = '';
+  updateFolderDatalist();
 
   pendingPdfFile = null;
   document.getElementById('book-pdf-input').value = '';
@@ -1827,7 +2493,10 @@ async function openEditBookModal(bookId) {
   document.getElementById('book-status-select').value = book.status;
   document.getElementById('book-total-pages').value = book.totalPages || 100;
   document.getElementById('book-current-page').value = book.currentPage || 0;
+  document.getElementById('book-folder-input').value = book.folderName || '';
+  document.getElementById('book-volume-input').value = book.volume || '';
   document.getElementById('book-notes-input').value = book.notes || '';
+  updateFolderDatalist();
 
   pendingPdfFile = null;
   document.getElementById('book-pdf-input').value = '';
@@ -1881,6 +2550,8 @@ async function handleSaveBook(e) {
   const status = document.getElementById('book-status-select').value;
   const totalPages = parseInt(document.getElementById('book-total-pages').value) || 100;
   const currentPage = parseInt(document.getElementById('book-current-page').value) || 0;
+  const folderName = document.getElementById('book-folder-input').value.trim();
+  const volume = document.getElementById('book-volume-input').value.trim();
   const notes = document.getElementById('book-notes-input').value.trim();
 
   let existingBook = null;
@@ -1932,6 +2603,8 @@ async function handleSaveBook(e) {
     status,
     totalPages,
     currentPage,
+    folderName,
+    volume,
     notes,
     coverGradient,
     pdfUrl,
@@ -2137,12 +2810,18 @@ create table if not exists books (
   total_pages int default 100,
   current_page int default 0,
   status text default 'Belum Dibaca',
+  folder_name text,
+  volume text,
   notes text,
   cover_gradient text,
   pdf_url text,
   pdf_file_name text,
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
+
+-- Migrasi tambahan untuk tabel yang sudah ada sebelumnya
+alter table books add column if not exists folder_name text;
+alter table books add column if not exists volume text;
 
 -- 2. Tabel Jadwal Baca (Notion)
 create table if not exists schedules (
@@ -2292,6 +2971,7 @@ async function cleanMobileCacheAndReload() {
 // ==============================================================================
 function filterCategory(cat) {
   selectedCategory = cat;
+  activeFolder = null; // Reset folder yang terbuka saat berpindah kategori
 
   const pills = ['all', 'keagamaan', 'network', 'lainnya'];
   pills.forEach((p) => {
@@ -2316,8 +2996,12 @@ function filterCategory(cat) {
 }
 
 function handleBookSearch() {
-  currentSearchTerm = document.getElementById('bookSearchInput').value;
-  currentStatusFilter = document.getElementById('statusFilterSelect').value;
+  const searchInput = document.getElementById('bookSearchInput');
+  currentSearchTerm = searchInput ? searchInput.value : '';
+  const statusSelect = document.getElementById('statusFilterSelect');
+  if (statusSelect) {
+    currentStatusFilter = statusSelect.value;
+  }
   renderDashboardView();
 }
 
